@@ -5,4 +5,4 @@ git push origin main
 pause
 
 
-REM .\git-update.bat
+REM .\git-update.batcd mobile-client

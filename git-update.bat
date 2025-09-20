@@ -5,4 +5,4 @@ git push origin main
 pause
 
 
-.\git-update.bat
+REM .\git-update.bat
