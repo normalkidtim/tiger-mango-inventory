@@ -28,6 +28,18 @@ const drinks = {
   "Mango Graham": require("./assets/images/mango-graham.png"),
 };
 
+// ✅ Mapping Firestore keys → Friendly names
+const friendlyNames = {
+  "chocolate-syrup": "Chocolate Syrup",
+  "strawberry-syrup": "Strawberry Syrup",
+  "crushed-grahams": "Crushed Grahams",
+  "ice-cream": "Ice Cream",
+  "oreo-crumble": "Oreo Crumble",
+  "oreo-grahams": "Oreo Grahams",
+  "pearl": "Pearl",
+  "sliced-mango": "Sliced Mango",
+};
+
 export default function OrderReviewScreen({ route, navigation }) {
   const { items: initialItems } = route.params || {};
   const [items, setItems] = useState(initialItems || []);
@@ -88,11 +100,16 @@ export default function OrderReviewScreen({ route, navigation }) {
         // ✅ Update add-ons
         if (item.addOns && item.addOns.length > 0) {
           for (let addOn of item.addOns) {
-            // 🔑 Firestore uses kebab-case (chocolate-syrup, sliced-mango, etc.)
-            const key = addOn.toLowerCase().replace(/\s+/g, "-");
-            await updateDoc(doc(db, "inventory", "add-ons"), {
-              [key]: increment(-item.quantity),
-            });
+            // Convert friendly name → Firestore key
+            const dbKey = Object.keys(friendlyNames).find(
+              (key) => friendlyNames[key] === addOn
+            );
+
+            if (dbKey) {
+              await updateDoc(doc(db, "inventory", "add-ons"), {
+                [dbKey]: increment(-item.quantity),
+              });
+            }
           }
         }
       }
@@ -112,7 +129,12 @@ export default function OrderReviewScreen({ route, navigation }) {
         <Text style={styles.flavorText}>{item.flavor}</Text>
         <Text style={styles.detailText}>Size: {item.size}</Text>
         {item.addOns.length > 0 && (
-          <Text style={styles.detailText}>Add-ons: {item.addOns.join(", ")}</Text>
+          <Text style={styles.detailText}>
+            Add-ons:{" "}
+            {item.addOns
+              .map((addOn) => friendlyNames[addOn] || addOn)
+              .join(", ")}
+          </Text>
         )}
         <Text style={styles.detailText}>Quantity: {item.quantity}</Text>
         <Text style={styles.priceText}>₱{item.price}</Text>

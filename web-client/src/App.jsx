@@ -33,7 +33,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <h1 className="title">📦 Tiger Mango Inventory</h1>
+      <h1 className="title">Tiger Mango Inventory</h1>
 
       {/* ✅ Cups Section */}
       <div className="card">

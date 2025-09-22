@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, TextInput } from 'react-native';
+import {
+  View,
+  Image,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  TextInput,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import drink images
@@ -22,29 +31,33 @@ const prices = {
   '1LITER': 135,
 };
 
+// ✅ Add-ons (matching your database)
+const addOnsList = [
+  'Pearl',
+  'Crushed Grahams',
+  'Oreo Crumble',
+  'Oreo Grahams',
+  'Strawberry Syrup',
+  'Chocolate Syrup',
+  'Sliced Mango',
+  'Ice Cream',
+];
+
 export default function OrderScreen({ navigation, route }) {
   const existingItems = route.params?.items || [];
-  
-  const [selectedFlavor, setSelectedFlavor] = useState('Mango Cheesecake');
+
+  // ✅ Default to selected flavor from MenuScreen (if provided)
+  const [selectedFlavor, setSelectedFlavor] = useState(
+    route.params?.selectedFlavor || 'Mango Cheesecake'
+  );
   const [selectedSize, setSelectedSize] = useState('TALL');
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
-  // ✅ Updated add-ons list (strawberry and chocolate separate)
-  const addOnsList = [
-    'Pearl',
-    'Crash Grahams',
-    'Oreo Crumble',
-    'Strawberry Syrup',
-    'Chocolate Syrup',
-    'Sliced Mango',
-    'Ice Cream',
-  ];
-
   const toggleAddOn = (addOn) => {
     if (selectedAddOns.includes(addOn)) {
-      setSelectedAddOns(selectedAddOns.filter(item => item !== addOn));
+      setSelectedAddOns(selectedAddOns.filter((item) => item !== addOn));
     } else {
       setSelectedAddOns([...selectedAddOns, addOn]);
     }
@@ -73,7 +86,10 @@ export default function OrderScreen({ navigation, route }) {
     <SafeAreaView style={styles.container}>
       <StatusBar translucent={true} backgroundColor="transparent" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Back Button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
@@ -92,7 +108,11 @@ export default function OrderScreen({ navigation, route }) {
 
         {/* Flavor Grid */}
         <Text style={styles.sectionTitle}>SELECT FLAVOR</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.flavorScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.flavorScroll}
+        >
           <View style={styles.flavorGrid}>
             {Object.keys(drinks).map((flavor) => (
               <TouchableOpacity
@@ -103,10 +123,12 @@ export default function OrderScreen({ navigation, route }) {
                 ]}
                 onPress={() => setSelectedFlavor(flavor)}
               >
-                <Text style={[
-                  styles.flavorText,
-                  selectedFlavor === flavor && styles.flavorTextSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.flavorText,
+                    selectedFlavor === flavor && styles.flavorTextSelected,
+                  ]}
+                >
                   {flavor}
                 </Text>
               </TouchableOpacity>
@@ -126,10 +148,12 @@ export default function OrderScreen({ navigation, route }) {
               ]}
               onPress={() => setSelectedSize(size)}
             >
-              <Text style={[
-                styles.sizeText,
-                selectedSize === size && styles.sizeTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.sizeText,
+                  selectedSize === size && styles.sizeTextSelected,
+                ]}
+              >
                 {size}
               </Text>
             </TouchableOpacity>
@@ -148,10 +172,12 @@ export default function OrderScreen({ navigation, route }) {
               ]}
               onPress={() => toggleAddOn(addOn)}
             >
-              <Text style={[
-                styles.addOnText,
-                selectedAddOns.includes(addOn) && styles.addOnTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.addOnText,
+                  selectedAddOns.includes(addOn) && styles.addOnTextSelected,
+                ]}
+              >
                 {addOn}
               </Text>
             </TouchableOpacity>
@@ -219,7 +245,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bigImage: { width: '90%', height: '80%', resizeMode: 'contain' },
-  sectionTitle: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
+  sectionTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
   flavorScroll: { marginBottom: 20 },
   flavorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   flavorButton: {
@@ -232,7 +264,12 @@ const styles = StyleSheet.create({
   flavorButtonSelected: { backgroundColor: '#FFD700' },
   flavorText: { fontSize: 14, fontWeight: '500', color: '#333' },
   flavorTextSelected: { color: 'black', fontWeight: 'bold' },
-  sizeContainer: { flexDirection: 'row', gap: 8, marginBottom: 20, flexWrap: 'wrap' },
+  sizeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+    flexWrap: 'wrap',
+  },
   sizeButton: {
     backgroundColor: 'white',
     paddingHorizontal: 16,
@@ -242,7 +279,12 @@ const styles = StyleSheet.create({
   sizeButtonSelected: { backgroundColor: '#FFD700' },
   sizeText: { fontSize: 14, fontWeight: '500', color: '#333' },
   sizeTextSelected: { color: 'black', fontWeight: 'bold' },
-  addOnsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  addOnsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
   addOnButton: {
     backgroundColor: '#333',
     paddingHorizontal: 12,
@@ -252,7 +294,12 @@ const styles = StyleSheet.create({
   addOnButtonSelected: { backgroundColor: '#FFD700' },
   addOnText: { color: 'white', fontSize: 14 },
   addOnTextSelected: { color: 'black', fontWeight: 'bold' },
-  quantityContainer: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 20,
+  },
   quantityButton: {
     backgroundColor: 'white',
     width: 40,
