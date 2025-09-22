@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar, Modal, ScrollView } from 'react-native';
+import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import drink images
 const drinks = {
@@ -21,7 +22,9 @@ const prices = {
   '1LITER': 135,
 };
 
-export default function OrderScreen({ visible, onClose, onPlaceOrder }) {
+export default function OrderScreen({ navigation, route }) {
+  const existingItems = route.params?.items || [];
+  
   const [selectedFlavor, setSelectedFlavor] = useState('Mango Cheesecake');
   const [selectedSize, setSelectedSize] = useState('TALL');
   const [selectedAddOns, setSelectedAddOns] = useState([]);
@@ -46,7 +49,8 @@ export default function OrderScreen({ visible, onClose, onPlaceOrder }) {
   };
 
   const handlePlaceOrder = () => {
-    const item = {
+    const newItem = {
+      id: Date.now(),
       flavor: selectedFlavor,
       size: selectedSize,
       addOns: selectedAddOns,
@@ -54,26 +58,33 @@ export default function OrderScreen({ visible, onClose, onPlaceOrder }) {
       notes,
       price: prices[selectedSize] * quantity,
     };
-    onPlaceOrder(item);
-    onClose();
+
+    const allItems = [...existingItems, newItem];
+    navigation.navigate('OrderReviewScreen', { items: allItems });
+  };
+
+  const handleGoBack = () => {
+    navigation.navigate('Menu');
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={false}
-    >
-      <View style={styles.container}>
-        {/* Make status bar visible */}
-        <StatusBar translucent={true} backgroundColor="transparent" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar translucent={true} backgroundColor="transparent" />
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Back Button */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← BACK</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Big Image */}
         <View style={styles.imageContainer}>
           <Image
             source={drinks[selectedFlavor]}
             style={styles.bigImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
 
@@ -166,56 +177,49 @@ export default function OrderScreen({ visible, onClose, onPlaceOrder }) {
 
         {/* Notes */}
         <Text style={styles.sectionTitle}>NOTES (Optional)</Text>
-        <View style={styles.notesContainer}>
-          <Text style={styles.notesPlaceholder}>Special instructions...</Text>
-        </View>
+        <TextInput
+          style={styles.notesInput}
+          placeholder="Special instructions..."
+          placeholderTextColor="#999"
+          value={notes}
+          onChangeText={setNotes}
+          multiline={true}
+        />
 
-        {/* Place Order Button */}
-        <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
-          <Text style={styles.placeOrderButtonText}>PLACE ORDER</Text>
-        </TouchableOpacity>
+        <View style={{ height: 40 }} />
+      </ScrollView>
 
-        {/* Close Button */}
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Text style={styles.closeButtonText}>✕ CLOSE</Text>
-        </TouchableOpacity>
-      </View>
-    </Modal>
+      {/* Place Order Button */}
+      <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
+        <Text style={styles.placeOrderButtonText}>PLACE ORDER</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#E53935',
-    padding: 16,
+  container: { flex: 1, backgroundColor: '#E53935', padding: 16 },
+  scrollContent: { paddingBottom: 80 },
+  header: { marginBottom: 16 },
+  backButton: {
+    backgroundColor: '#333',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
+  backButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   imageContainer: {
     height: 200,
     marginBottom: 20,
     borderRadius: 12,
     overflow: 'hidden',
+    alignItems: 'center',
   },
-  bigImage: {
-    width: '100%',
-    height: '100%',
-  },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  flavorScroll: {
-    marginBottom: 20,
-  },
-  flavorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  bigImage: { width: '90%', height: '80%', resizeMode: 'contain' },
+  sectionTitle: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
+  flavorScroll: { marginBottom: 20 },
+  flavorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   flavorButton: {
     backgroundColor: 'white',
     paddingHorizontal: 12,
@@ -223,71 +227,30 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 8,
   },
-  flavorButtonSelected: {
-    backgroundColor: '#FFD700',
-  },
-  flavorText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  flavorTextSelected: {
-    color: 'black',
-    fontWeight: 'bold',
-  },
-  sizeContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
-    flexWrap: 'wrap',
-  },
+  flavorButtonSelected: { backgroundColor: '#FFD700' },
+  flavorText: { fontSize: 14, fontWeight: '500', color: '#333' },
+  flavorTextSelected: { color: 'black', fontWeight: 'bold' },
+  sizeContainer: { flexDirection: 'row', gap: 8, marginBottom: 20, flexWrap: 'wrap' },
   sizeButton: {
     backgroundColor: 'white',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  sizeButtonSelected: {
-    backgroundColor: '#FFD700',
-  },
-  sizeText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  sizeTextSelected: {
-    color: 'black',
-    fontWeight: 'bold',
-  },
-  addOnsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
+  sizeButtonSelected: { backgroundColor: '#FFD700' },
+  sizeText: { fontSize: 14, fontWeight: '500', color: '#333' },
+  sizeTextSelected: { color: 'black', fontWeight: 'bold' },
+  addOnsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   addOnButton: {
     backgroundColor: '#333',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
   },
-  addOnButtonSelected: {
-    backgroundColor: '#FFD700',
-  },
-  addOnText: {
-    color: 'white',
-    fontSize: 14,
-  },
-  addOnTextSelected: {
-    color: 'black',
-    fontWeight: 'bold',
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 20,
-  },
+  addOnButtonSelected: { backgroundColor: '#FFD700' },
+  addOnText: { color: 'white', fontSize: 14 },
+  addOnTextSelected: { color: 'black', fontWeight: 'bold' },
+  quantityContainer: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
   quantityButton: {
     backgroundColor: 'white',
     width: 40,
@@ -296,50 +259,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quantityButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  quantityText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  notesContainer: {
+  quantityButtonText: { fontSize: 24, fontWeight: 'bold', color: '#333' },
+  quantityText: { fontSize: 24, fontWeight: 'bold', color: 'white' },
+  notesInput: {
     backgroundColor: 'white',
     height: 60,
     borderRadius: 8,
-    justifyContent: 'center',
     paddingHorizontal: 12,
     marginBottom: 20,
-  },
-  notesPlaceholder: {
-    color: '#999',
+    textAlignVertical: 'top',
     fontSize: 16,
+    color: 'black',
   },
   placeOrderButton: {
-    backgroundColor: 'red',
+    backgroundColor: '#FFD700',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 16,
+    position: 'absolute',
+    bottom: 20,
+    left: '10%',
+    right: '10%',
+    zIndex: 10,
   },
-  placeOrderButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    backgroundColor: '#333',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  placeOrderButtonText: { color: 'black', fontSize: 18, fontWeight: 'bold' },
 });

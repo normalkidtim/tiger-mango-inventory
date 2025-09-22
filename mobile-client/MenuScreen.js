@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
-import OrderScreen from './OrderScreen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import drink images
 const mangoCheesecake = require('./assets/images/mango-cheesecake.png');
@@ -15,63 +15,55 @@ const mangoGraham = require('./assets/images/mango-graham.png');
 
 export default function MenuScreen({ navigation }) {
   return (
-    <View style={styles.container}>
-      {/* Make status bar visible */}
+    <SafeAreaView style={styles.container}>
       <StatusBar translucent={true} backgroundColor="transparent" />
 
-      {/* Scrollable Content */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Drink Grid */}
         <View style={styles.grid}>
-          {/* Row 1 */}
           <View style={styles.card}>
             <Image source={mangoCheesecake} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Cheesecake</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Cheesecake</Text>
           </View>
           <View style={styles.card}>
             <Image source={mangoIceCream} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Ice Cream</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Ice Cream</Text>
           </View>
           <View style={styles.card}>
             <Image source={mangoStrawberry} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Strawberry</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Strawberry</Text>
           </View>
-
-          {/* Row 2 */}
           <View style={styles.card}>
             <Image source={tigerCombo} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Tiger Combo</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Tiger Combo</Text>
           </View>
           <View style={styles.card}>
             <Image source={mangoChocolate} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Chocolate</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Chocolate</Text>
           </View>
           <View style={styles.card}>
             <Image source={mangoBanana} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Banana</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Banana</Text>
           </View>
-
-          {/* Row 3 */}
           <View style={styles.card}>
             <Image source={mangoCashews} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Cashews</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Cashews</Text>
           </View>
           <View style={styles.card}>
             <Image source={mangoChips} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Chips</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Chips</Text>
           </View>
           <View style={styles.card}>
             <Image source={mangoGraham} style={styles.drinkImage} />
-            <Text style={styles.drinkName}>Mango Graham</Text>
+            <Text style={styles.drinkName} numberOfLines={2}>Mango Graham</Text>
           </View>
         </View>
 
-        {/* Pricing Section */}
+        {/* Pricing & Add-ons */}
         <View style={styles.pricingSection}>
-          {/* Price Rows */}
           <View style={styles.priceRow}>
             <Text style={styles.sizeText}>TALL</Text>
             <Text style={styles.priceText}>85</Text>
@@ -84,8 +76,6 @@ export default function MenuScreen({ navigation }) {
             <Text style={styles.sizeText}>1LITER</Text>
             <Text style={styles.priceText}>135</Text>
           </View>
-
-          {/* Add-ons */}
           <Text style={styles.addOnsTitle}>ADD ONS:</Text>
           <View style={styles.addOnsContainer}>
             <Text style={styles.addOnText}>Pearl</Text>
@@ -97,41 +87,27 @@ export default function MenuScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Spacer to push button down */}
         <View style={{ height: 20 }} />
-
       </ScrollView>
 
-      {/* Proceed Button (Sticky at Bottom) */}
+      {/* PROCEED Button */}
       <TouchableOpacity
         style={styles.proceedButton}
         onPress={() => navigation.navigate('OrderScreen')}
       >
         <Text style={styles.proceedButtonText}>PROCEED</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#E53935',
-  },
-  scrollContent: {
-    padding: 10,
-    paddingBottom: 80, // Make space for sticky button
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
+  container: { flex: 1, backgroundColor: '#E53935' },
+  scrollContent: { padding: 10, paddingBottom: 80 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
   card: {
     width: '30%',
-    aspectRatio: 1,
+    aspectRatio: 0.9,
     marginBottom: 15,
     alignItems: 'center',
     borderRadius: 8,
@@ -143,11 +119,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  drinkImage: {
-    width: '100%',
-    height: '70%',
-    resizeMode: 'cover',
-  },
+  drinkImage: { width: '100%', height: '70%', resizeMode: 'cover' },
   drinkName: {
     fontSize: 12,
     fontWeight: 'bold',
@@ -155,6 +127,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
     paddingHorizontal: 5,
     color: '#333',
+    flexShrink: 1,
+    lineHeight: 16,
   },
   pricingSection: {
     backgroundColor: 'black',
@@ -162,33 +136,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 'auto',
   },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  sizeText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  priceText: {
-    color: 'red',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  addOnsTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  addOnsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  sizeText: { color: 'white', fontSize: 16, fontWeight: '500' },
+  priceText: { color: 'red', fontSize: 22, fontWeight: 'bold' },
+  addOnsTitle: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
+  addOnsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   addOnText: {
     color: 'white',
     fontSize: 14,
@@ -208,9 +160,5 @@ const styles = StyleSheet.create({
     right: '10%',
     zIndex: 10,
   },
-  proceedButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'black',
-  },
+  proceedButtonText: { fontSize: 18, fontWeight: 'bold', color: 'black' },
 });

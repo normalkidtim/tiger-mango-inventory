@@ -2,8 +2,10 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; // CHANGED: Import from correct package
 import MenuScreen from './MenuScreen';
-import OrderScreen from './OrderScreen'; // Import OrderScreen
+import OrderScreen from './OrderScreen';
+import OrderReviewScreen from './OrderReviewScreen';
 
 // Import your images
 const flavorBanner1 = require('./assets/images/flavorbanner1.png');
@@ -30,6 +32,11 @@ export default function App() {
           component={OrderScreen}
           options={{ title: 'Order' }}
         />
+        <Stack.Screen
+          name="OrderReviewScreen"
+          component={OrderReviewScreen}
+          options={{ title: 'Order Review', headerShown: false }} // ADDED: headerShown: false to remove the default header
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -37,30 +44,12 @@ export default function App() {
 
 function HomeScreen({ navigation }) {
   return (
-    <View style={styles.container}>
-      {/* Make status bar visible */}
+    <SafeAreaView style={styles.container}> 
       <StatusBar translucent={true} backgroundColor="transparent" />
-
-      {/* Top Banner */}
-      <Image
-        source={flavorBanner1}
-        style={styles.bannerTop}
-        resizeMode="cover"
-      />
-
-      {/* Red Background Section */}
+      <Image source={flavorBanner1} style={styles.bannerTop} resizeMode="cover" />
       <View style={styles.redSection}>
-        {/* FLAVORS Text */}
         <Text style={styles.flavorsText}>FLAVORS</Text>
-
-        {/* Drink Grid */}
-        <Image
-          source={flavorBanner2}
-          style={styles.drinkGrid}
-          resizeMode="contain"
-        />
-
-        {/* ORDER Button */}
+        <Image source={flavorBanner2} style={styles.drinkGrid} resizeMode="contain" />
         <TouchableOpacity
           style={styles.orderButton}
           onPress={() => navigation.navigate('Menu')}
@@ -68,19 +57,13 @@ function HomeScreen({ navigation }) {
           <Text style={styles.orderButtonText}>ORDER</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  bannerTop: {
-    width: '100%',
-    height: 200,
-  },
+  container: { flex: 1 },
+  bannerTop: { width: '100%', height: 200 },
   redSection: {
     flex: 1,
     backgroundColor: '#E53935',
@@ -94,11 +77,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  drinkGrid: {
-    width: '90%',
-    height: 320,
-    marginVertical: 20,
-  },
+  drinkGrid: { width: '90%', height: 320, marginVertical: 20 },
   orderButton: {
     width: 200,
     height: 44,
