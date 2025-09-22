@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // CHANGED: Import from correct package
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MenuScreen from './MenuScreen';
 import OrderScreen from './OrderScreen';
 import OrderReviewScreen from './OrderReviewScreen';
@@ -25,17 +25,17 @@ export default function App() {
         <Stack.Screen
           name="Menu"
           component={MenuScreen}
-          options={{ title: 'Menu' }}
+          options={{ headerShown: false }} // Hide header for MenuScreen
         />
         <Stack.Screen
           name="OrderScreen"
           component={OrderScreen}
-          options={{ title: 'Order' }}
+          options={{ headerShown: false }} // Hide header for OrderScreen
         />
         <Stack.Screen
           name="OrderReviewScreen"
           component={OrderReviewScreen}
-          options={{ title: 'Order Review', headerShown: false }} // ADDED: headerShown: false to remove the default header
+          options={{ headerShown: false }} // Hide header for OrderReviewScreen
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -44,7 +44,7 @@ export default function App() {
 
 function HomeScreen({ navigation }) {
   return (
-    <SafeAreaView style={styles.container}> 
+    <SafeAreaView style={styles.container}>
       <StatusBar translucent={true} backgroundColor="transparent" />
       <Image source={flavorBanner1} style={styles.bannerTop} resizeMode="cover" />
       <View style={styles.redSection}>

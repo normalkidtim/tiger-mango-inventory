@@ -31,11 +31,13 @@ export default function OrderScreen({ navigation, route }) {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
+  // ✅ Updated add-ons list (strawberry and chocolate separate)
   const addOnsList = [
     'Pearl',
     'Crash Grahams',
     'Oreo Crumble',
-    'Strawberry/Chocolate Syrup',
+    'Strawberry Syrup',
+    'Chocolate Syrup',
     'Sliced Mango',
     'Ice Cream',
   ];

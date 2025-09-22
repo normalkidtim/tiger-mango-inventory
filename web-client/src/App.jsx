@@ -1,85 +1,70 @@
-import { useState } from "react";
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import React, { useEffect, useState } from "react";
+import { db } from "./firebase"; // make sure you create firebase.js in web client too
+import { doc, onSnapshot } from "firebase/firestore";
+import "./App.css";
 
-function App() {
-  const [stockData] = useState([
-  { name: "Mango", stock: 40 },
-  { name: "Tiger Syrup", stock: 15 },
-  { name: "Milk", stock: 25 },
-  { name: "Cups", stock: 60 },
-]);
+export default function App() {
+  const [cups, setCups] = useState({});
+  const [straws, setStraws] = useState({});
+  const [addOns, setAddOns] = useState({});
 
+  useEffect(() => {
+    // ✅ Listen to cups
+    const unsubCups = onSnapshot(doc(db, "inventory", "cups"), (docSnap) => {
+      if (docSnap.exists()) setCups(docSnap.data());
+    });
 
-  const usageTrend = [
-    { day: "Mon", used: 12 },
-    { day: "Tue", used: 15 },
-    { day: "Wed", used: 10 },
-    { day: "Thu", used: 18 },
-    { day: "Fri", used: 20 },
-    { day: "Sat", used: 25 },
-    { day: "Sun", used: 22 },
-  ];
+    // ✅ Listen to straws
+    const unsubStraws = onSnapshot(doc(db, "inventory", "straw"), (docSnap) => {
+      if (docSnap.exists()) setStraws(docSnap.data());
+    });
 
-  const COLORS = ["#6B4226", "#D4A373", "#B5838D", "#8ECAE6"];
+    // ✅ Listen to add-ons
+    const unsubAddOns = onSnapshot(doc(db, "inventory", "add-ons"), (docSnap) => {
+      if (docSnap.exists()) setAddOns(docSnap.data());
+    });
+
+    return () => {
+      unsubCups();
+      unsubStraws();
+      unsubAddOns();
+    };
+  }, []);
 
   return (
-    <div className="p-6 grid gap-6 grid-cols-1 md:grid-cols-2 font-sans bg-gray-100 min-h-screen">
-      {/* Stock Levels */}
-      <div className="shadow-lg rounded-2xl p-4 bg-white">
-        <h2 className="text-xl font-bold mb-4">Current Stock Levels</h2>
+    <div className="app-container">
+      <h1 className="title">📦 Tiger Mango Inventory</h1>
+
+      {/* ✅ Cups Section */}
+      <div className="card">
+        <h2>Cups</h2>
         <ul>
-          {stockData.map((item, index) => (
-            <li
-              key={index}
-              className={`flex justify-between p-2 rounded-md mb-2 ${
-                item.stock < 10 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-              }`}
-            >
-              <span>{item.name}</span>
-              <span>{item.stock} units</span>
+          <li>Tall: {cups.tall ?? 0}</li>
+          <li>Grande: {cups.grande ?? 0}</li>
+          <li>1 Liter: {cups.liter ?? 0}</li>
+        </ul>
+      </div>
+
+      {/* ✅ Straws Section */}
+      <div className="card">
+        <h2>Straws</h2>
+        <ul>
+          <li>Regular: {straws.regular ?? 0}</li>
+          <li>Big: {straws.big ?? 0}</li>
+        </ul>
+      </div>
+
+      {/* ✅ Add-ons Section */}
+      <div className="card">
+        <h2>Add-ons</h2>
+        <ul>
+          {Object.entries(addOns).map(([key, value]) => (
+            <li key={key}>
+              {key.replace(/-/g, " ")}: {value}
             </li>
           ))}
         </ul>
       </div>
-
-      {/* Usage Trends */}
-      <div className="shadow-lg rounded-2xl p-4 bg-white">
-        <h2 className="text-xl font-bold mb-4">Weekly Usage Trend</h2>
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={usageTrend}>
-            <XAxis dataKey="day" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="used" stroke="#6B4226" strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Inventory Breakdown */}
-      <div className="shadow-lg rounded-2xl p-4 bg-white col-span-1 md:col-span-2">
-        <h2 className="text-xl font-bold mb-4">Inventory Breakdown</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={stockData}
-              dataKey="stock"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={100}
-              fill="#8884d8"
-              label
-            >
-              {stockData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
     </div>
   );
 }
-
-export default App;
