@@ -157,7 +157,7 @@ export default function OrderReviewScreen({ route, navigation }) {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar translucent={true} backgroundColor="transparent" />
 
       <View style={styles.header}>
@@ -195,8 +195,8 @@ export default function OrderReviewScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#E53935", padding: 16 },
-  header: { alignItems: "center", marginBottom: 20 },
+  safeArea: { flex: 1, backgroundColor: "#E53935", padding: 16 },
+  header: { alignItems: "center", marginBottom: 20, marginTop: 10 },
   title: { fontSize: 24, fontWeight: "bold", color: "white" },
   totalText: {
     fontSize: 20,
