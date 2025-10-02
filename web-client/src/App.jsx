@@ -5,7 +5,8 @@ import {
   updateDoc,
   doc,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  getDocs
 } from "firebase/firestore";
 import { db } from "./firebase";
 import "./App.css";
@@ -16,26 +17,64 @@ export default function App() {
   const [addons, setAddons] = useState({});
   const [stockLogs, setStockLogs] = useState([]);
   const [activeTab, setActiveTab] = useState("inventory");
+  const [debugInfo, setDebugInfo] = useState("");
 
   useEffect(() => {
-    // ✅ Inventory listener with debug logging
+    // ✅ Debug: Check ALL inventory documents
+    const debugFirebase = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "inventory"));
+        let debugText = "🔥 ALL INVENTORY DOCUMENTS:\n";
+        
+        querySnapshot.forEach((doc) => {
+          debugText += `📄 Document: ${doc.id}\n`;
+          debugText += `📊 Data: ${JSON.stringify(doc.data(), null, 2)}\n`;
+          debugText += "─".repeat(50) + "\n";
+        });
+        
+        setDebugInfo(debugText);
+        console.log(debugText);
+      } catch (error) {
+        console.error("Debug error:", error);
+        setDebugInfo(`❌ Debug Error: ${error.message}`);
+      }
+    };
+
+    debugFirebase();
+
+    // ✅ Inventory listener
     const unsubInventory = onSnapshot(collection(db, "inventory"), (snap) => {
-      console.log("🔥 Raw inventory data:", snap.docs.map(doc => ({ id: doc.id, data: doc.data() })));
+      console.log("🔄 Inventory snapshot received");
+      let foundCups = false;
+      let foundStraws = false;
       
       snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        console.log(`📦 ${docSnap.id}:`, data);
+        
         if (docSnap.id === "cups") {
-          console.log("📦 Cups data:", docSnap.data());
-          setCups(docSnap.data());
+          setCups(data);
+          foundCups = true;
+          console.log("✅ Cups set:", data);
         }
         if (docSnap.id === "straw") {
-          console.log("🥤 Straws data:", docSnap.data());
-          setStraws(docSnap.data());
+          setStraws(data);
+          foundStraws = true;
+          console.log("✅ Straws set:", data);
+        }
+        if (docSnap.id === "straws") { // Try plural version
+          setStraws(data);
+          foundStraws = true;
+          console.log("✅ Straws (plural) set:", data);
         }
         if (docSnap.id === "add-ons") {
-          console.log("🍧 Add-ons data:", docSnap.data());
-          setAddons(docSnap.data());
+          setAddons(data);
+          console.log("✅ Add-ons set:", data);
         }
       });
+
+      if (!foundCups) console.log("❌ No 'cups' document found!");
+      if (!foundStraws) console.log("❌ No 'straw' or 'straws' document found!");
     });
 
     // ✅ Stock Logs
@@ -44,7 +83,6 @@ export default function App() {
       snap.forEach((docSnap) => {
         logs.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort by timestamp descending
       logs.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
       setStockLogs(logs);
     });
@@ -64,6 +102,8 @@ export default function App() {
         alert("❌ Please enter a valid number");
         return;
       }
+
+      console.log(`🔄 Updating ${collectionName}.${field} to ${numericValue}`);
 
       // Update the inventory collection
       await updateDoc(doc(db, "inventory", collectionName), {
@@ -107,6 +147,7 @@ export default function App() {
         <h2 className="sidebar-title">Tiger Mango (Employee)</h2>
         <button onClick={() => setActiveTab("inventory")}>📦 Inventory Management</button>
         <button onClick={() => setActiveTab("logs")}>📜 Stock Update Logs</button>
+        <button onClick={() => setActiveTab("debug")}>🐛 Debug Info</button>
       </div>
 
       {/* Main Content */}
@@ -116,13 +157,16 @@ export default function App() {
             {/* Cups */}
             <div className="card">
               <h2>🧃 Cups</h2>
+              <div style={{color: 'red', fontSize: '12px', marginBottom: '10px'}}>
+                Current data: {JSON.stringify(cups)}
+              </div>
               <ul>
                 <li>
                   <span className="item-label">Tall:</span>
                   <input
                     type="number"
                     min="0"
-                    value={cups.tall ?? 0}
+                    value={cups.tall ?? cups.Tall ?? 0}
                     onChange={(e) => setCups(prev => ({...prev, tall: Number(e.target.value)}))}
                     onBlur={(e) =>
                       handleStockChange("cups", "tall", e.target.value, "Cups - Tall")
@@ -134,7 +178,7 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={cups.grande ?? 0}
+                    value={cups.grande ?? cups.Grande ?? 0}
                     onChange={(e) => setCups(prev => ({...prev, grande: Number(e.target.value)}))}
                     onBlur={(e) =>
                       handleStockChange("cups", "grande", e.target.value, "Cups - Grande")
@@ -146,7 +190,7 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={cups.liter ?? 0}
+                    value={cups.liter ?? cups.Liter ?? cups['1liter'] ?? 0}
                     onChange={(e) => setCups(prev => ({...prev, liter: Number(e.target.value)}))}
                     onBlur={(e) =>
                       handleStockChange("cups", "liter", e.target.value, "Cups - 1 Liter")
@@ -159,13 +203,16 @@ export default function App() {
             {/* Straws */}
             <div className="card">
               <h2>🥤 Straws</h2>
+              <div style={{color: 'red', fontSize: '12px', marginBottom: '10px'}}>
+                Current data: {JSON.stringify(straws)}
+              </div>
               <ul>
                 <li>
                   <span className="item-label">Regular:</span>
                   <input
                     type="number"
                     min="0"
-                    value={straws.regular ?? 0}
+                    value={straws.regular ?? straws.Regular ?? 0}
                     onChange={(e) => setStraws(prev => ({...prev, regular: Number(e.target.value)}))}
                     onBlur={(e) =>
                       handleStockChange("straw", "regular", e.target.value, "Straws - Regular")
@@ -177,7 +224,7 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={straws.big ?? 0}
+                    value={straws.big ?? straws.Big ?? 0}
                     onChange={(e) => setStraws(prev => ({...prev, big: Number(e.target.value)}))}
                     onBlur={(e) =>
                       handleStockChange("straw", "big", e.target.value, "Straws - Big")
@@ -190,6 +237,9 @@ export default function App() {
             {/* Add-ons */}
             <div className="card">
               <h2>🍧 Add-ons</h2>
+              <div style={{color: 'green', fontSize: '12px', marginBottom: '10px'}}>
+                Working! Data: {Object.keys(addons).length} items loaded
+              </div>
               <ul>
                 {Object.keys(addons)
                   .sort()
@@ -249,6 +299,38 @@ export default function App() {
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {activeTab === "debug" && (
+          <div className="card">
+            <h2>🐛 Debug Information</h2>
+            <pre style={{ 
+              background: '#f5f5f5', 
+              padding: '15px', 
+              borderRadius: '5px', 
+              fontSize: '12px',
+              overflow: 'auto',
+              maxHeight: '400px'
+            }}>
+              {debugInfo || "Loading debug information..."}
+            </pre>
+            
+            <h3>Current State:</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div>
+                <h4>Cups State:</h4>
+                <pre>{JSON.stringify(cups, null, 2)}</pre>
+              </div>
+              <div>
+                <h4>Straws State:</h4>
+                <pre>{JSON.stringify(straws, null, 2)}</pre>
+              </div>
+              <div>
+                <h4>Add-ons State:</h4>
+                <pre>{JSON.stringify(addons, null, 2)}</pre>
+              </div>
+            </div>
           </div>
         )}
       </div>
