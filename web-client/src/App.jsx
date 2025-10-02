@@ -18,12 +18,23 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("inventory");
 
   useEffect(() => {
-    // ✅ Inventory listener
+    // ✅ Inventory listener with debug logging
     const unsubInventory = onSnapshot(collection(db, "inventory"), (snap) => {
+      console.log("🔥 Raw inventory data:", snap.docs.map(doc => ({ id: doc.id, data: doc.data() })));
+      
       snap.forEach((docSnap) => {
-        if (docSnap.id === "cups") setCups(docSnap.data());
-        if (docSnap.id === "straw") setStraws(docSnap.data());
-        if (docSnap.id === "add-ons") setAddons(docSnap.data());
+        if (docSnap.id === "cups") {
+          console.log("📦 Cups data:", docSnap.data());
+          setCups(docSnap.data());
+        }
+        if (docSnap.id === "straw") {
+          console.log("🥤 Straws data:", docSnap.data());
+          setStraws(docSnap.data());
+        }
+        if (docSnap.id === "add-ons") {
+          console.log("🍧 Add-ons data:", docSnap.data());
+          setAddons(docSnap.data());
+        }
       });
     });
 
@@ -63,7 +74,7 @@ export default function App() {
       await addDoc(collection(db, "stock-logs"), {
         item: itemName || `${collectionName} - ${field}`,
         newValue: numericValue,
-        user: "employee", // You can change this to dynamic user later
+        user: "employee",
         timestamp: serverTimestamp(),
       });
 
@@ -106,21 +117,42 @@ export default function App() {
             <div className="card">
               <h2>🧃 Cups</h2>
               <ul>
-                {["tall", "grande", "liter"].map((key) => (
-                  <li key={key}>
-                    <span className="item-label">
-                      {key.charAt(0).toUpperCase() + key.slice(1)}:
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      defaultValue={cups[key] ?? 0}
-                      onBlur={(e) =>
-                        handleStockChange("cups", key, e.target.value, `Cups - ${key}`)
-                      }
-                    />
-                  </li>
-                ))}
+                <li>
+                  <span className="item-label">Tall:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={cups.tall ?? 0}
+                    onChange={(e) => setCups(prev => ({...prev, tall: Number(e.target.value)}))}
+                    onBlur={(e) =>
+                      handleStockChange("cups", "tall", e.target.value, "Cups - Tall")
+                    }
+                  />
+                </li>
+                <li>
+                  <span className="item-label">Grande:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={cups.grande ?? 0}
+                    onChange={(e) => setCups(prev => ({...prev, grande: Number(e.target.value)}))}
+                    onBlur={(e) =>
+                      handleStockChange("cups", "grande", e.target.value, "Cups - Grande")
+                    }
+                  />
+                </li>
+                <li>
+                  <span className="item-label">1 Liter:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={cups.liter ?? 0}
+                    onChange={(e) => setCups(prev => ({...prev, liter: Number(e.target.value)}))}
+                    onBlur={(e) =>
+                      handleStockChange("cups", "liter", e.target.value, "Cups - 1 Liter")
+                    }
+                  />
+                </li>
               </ul>
             </div>
 
@@ -128,21 +160,30 @@ export default function App() {
             <div className="card">
               <h2>🥤 Straws</h2>
               <ul>
-                {["regular", "big"].map((key) => (
-                  <li key={key}>
-                    <span className="item-label">
-                      {key.charAt(0).toUpperCase() + key.slice(1)}:
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      defaultValue={straws[key] ?? 0}
-                      onBlur={(e) =>
-                        handleStockChange("straw", key, e.target.value, `Straws - ${key}`)
-                      }
-                    />
-                  </li>
-                ))}
+                <li>
+                  <span className="item-label">Regular:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={straws.regular ?? 0}
+                    onChange={(e) => setStraws(prev => ({...prev, regular: Number(e.target.value)}))}
+                    onBlur={(e) =>
+                      handleStockChange("straw", "regular", e.target.value, "Straws - Regular")
+                    }
+                  />
+                </li>
+                <li>
+                  <span className="item-label">Big:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={straws.big ?? 0}
+                    onChange={(e) => setStraws(prev => ({...prev, big: Number(e.target.value)}))}
+                    onBlur={(e) =>
+                      handleStockChange("straw", "big", e.target.value, "Straws - Big")
+                    }
+                  />
+                </li>
               </ul>
             </div>
 
@@ -160,7 +201,12 @@ export default function App() {
                       <input
                         type="number"
                         min="0"
-                        defaultValue={addons[key] ?? 0}
+                        value={addons[key] ?? 0}
+                        onChange={(e) => {
+                          const newAddons = {...addons};
+                          newAddons[key] = Number(e.target.value);
+                          setAddons(newAddons);
+                        }}
                         onBlur={(e) =>
                           handleStockChange("add-ons", key, e.target.value, getAddonDisplayName(key))
                         }
