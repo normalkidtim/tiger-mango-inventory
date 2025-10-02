@@ -8,7 +8,7 @@ import {
   query
 } from "firebase/firestore";
 import { db } from "./firebase";
-import "./app.css";
+import "./App.css";
 
 export default function App() {
   const [cups, setCups] = useState({});
