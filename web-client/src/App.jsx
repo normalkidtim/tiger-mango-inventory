@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   collection,
   onSnapshot,
   updateDoc,
   doc,
-  orderBy,
-  query
+  addDoc,
+  serverTimestamp
 } from "firebase/firestore";
 import { db } from "./firebase";
 import "./App.css";
@@ -14,11 +14,11 @@ export default function App() {
   const [cups, setCups] = useState({});
   const [straws, setStraws] = useState({});
   const [addons, setAddons] = useState({});
-  const [purchaseHistory, setPurchaseHistory] = useState([]);
+  const [stockLogs, setStockLogs] = useState([]);
   const [activeTab, setActiveTab] = useState("inventory");
 
   useEffect(() => {
-    // Listen to inventory
+    // ✅ Inventory listener
     const unsubInventory = onSnapshot(collection(db, "inventory"), (snap) => {
       snap.forEach((docSnap) => {
         if (docSnap.id === "cups") setCups(docSnap.data());
@@ -27,28 +27,46 @@ export default function App() {
       });
     });
 
-    // Listen to orders
-    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-    const unsubOrders = onSnapshot(q, (snap) => {
-      let orders = [];
+    // ✅ Stock Logs
+    const unsubLogs = onSnapshot(collection(db, "stock-logs"), (snap) => {
+      let logs = [];
       snap.forEach((docSnap) => {
-        orders.push({ id: docSnap.id, ...docSnap.data() });
+        logs.push({ id: docSnap.id, ...docSnap.data() });
       });
-      setPurchaseHistory(orders);
+      // Sort by timestamp descending
+      logs.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+      setStockLogs(logs);
     });
 
     return () => {
       unsubInventory();
-      unsubOrders();
+      unsubLogs();
     };
   }, []);
 
-  // Update stock
-  const handleStockChange = async (collectionName, field, value) => {
+  // ✅ Update stock + log it
+  const handleStockChange = async (collectionName, field, value, itemName) => {
     try {
+      const numericValue = Number(value);
+      
+      if (isNaN(numericValue) || numericValue < 0) {
+        alert("❌ Please enter a valid number");
+        return;
+      }
+
+      // Update the inventory collection
       await updateDoc(doc(db, "inventory", collectionName), {
-        [field]: Number(value),
+        [field]: numericValue,
       });
+
+      // Add a log entry
+      await addDoc(collection(db, "stock-logs"), {
+        item: itemName || `${collectionName} - ${field}`,
+        newValue: numericValue,
+        user: "employee", // You can change this to dynamic user later
+        timestamp: serverTimestamp(),
+      });
+
       alert("✅ Stock updated successfully!");
     } catch (err) {
       console.error("Error updating stock:", err);
@@ -56,13 +74,28 @@ export default function App() {
     }
   };
 
+  // ✅ Get friendly name for add-ons
+  const getAddonDisplayName = (key) => {
+    const names = {
+      "chocolate-syrup": "Chocolate Syrup",
+      "strawberry-syrup": "Strawberry Syrup",
+      "crushed-grahams": "Crushed Grahams",
+      "ice-cream": "Ice Cream",
+      "oreo-crumble": "Oreo Crumble",
+      "oreo-grahams": "Oreo Grahams",
+      "pearl": "Pearl",
+      "sliced-mango": "Sliced Mango",
+    };
+    return names[key] || key;
+  };
+
   return (
     <div className="dashboard">
       {/* Sidebar */}
       <div className="sidebar">
-        <h2 className="sidebar-title">Tiger Mango (Web)</h2>
-        <button onClick={() => setActiveTab("inventory")}>📦 Inventory</button>
-        <button onClick={() => setActiveTab("history")}>📝 Purchase History</button>
+        <h2 className="sidebar-title">Tiger Mango (Employee)</h2>
+        <button onClick={() => setActiveTab("inventory")}>📦 Inventory Management</button>
+        <button onClick={() => setActiveTab("logs")}>📜 Stock Update Logs</button>
       </div>
 
       {/* Main Content */}
@@ -75,12 +108,15 @@ export default function App() {
               <ul>
                 {["tall", "grande", "liter"].map((key) => (
                   <li key={key}>
-                    {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
+                    <span className="item-label">
+                      {key.charAt(0).toUpperCase() + key.slice(1)}:
+                    </span>
                     <input
                       type="number"
+                      min="0"
                       defaultValue={cups[key] ?? 0}
                       onBlur={(e) =>
-                        handleStockChange("cups", key, e.target.value)
+                        handleStockChange("cups", key, e.target.value, `Cups - ${key}`)
                       }
                     />
                   </li>
@@ -94,12 +130,15 @@ export default function App() {
               <ul>
                 {["regular", "big"].map((key) => (
                   <li key={key}>
-                    {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
+                    <span className="item-label">
+                      {key.charAt(0).toUpperCase() + key.slice(1)}:
+                    </span>
                     <input
                       type="number"
+                      min="0"
                       defaultValue={straws[key] ?? 0}
                       onBlur={(e) =>
-                        handleStockChange("straw", key, e.target.value)
+                        handleStockChange("straw", key, e.target.value, `Straws - ${key}`)
                       }
                     />
                   </li>
@@ -115,14 +154,15 @@ export default function App() {
                   .sort()
                   .map((key) => (
                     <li key={key}>
-                      {key.replace(/-/g, " ").replace(/\b\w/g, (c) =>
-                        c.toUpperCase()
-                      )}:{" "}
+                      <span className="item-label">
+                        {getAddonDisplayName(key)}:
+                      </span>
                       <input
                         type="number"
+                        min="0"
                         defaultValue={addons[key] ?? 0}
                         onBlur={(e) =>
-                          handleStockChange("add-ons", key, e.target.value)
+                          handleStockChange("add-ons", key, e.target.value, getAddonDisplayName(key))
                         }
                       />
                     </li>
@@ -132,37 +172,37 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === "history" && (
+        {activeTab === "logs" && (
           <div className="card">
-            <h2>📝 Purchase History</h2>
-            <table className="history-table">
-              <thead>
-                <tr>
-                  <th>Flavor</th>
-                  <th>Size</th>
-                  <th>Add-ons</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchaseHistory.map((order) => (
-                  <tr key={order.id}>
-                    <td>{order.flavor}</td>
-                    <td>{order.size}</td>
-                    <td>{order.addOns?.join(", ") || "-"}</td>
-                    <td>{order.quantity}</td>
-                    <td>₱{order.price}</td>
-                    <td>
-                      {order.createdAt
-                        ? order.createdAt.toDate().toLocaleString()
-                        : "-"}
-                    </td>
+            <h2>📜 Stock Update Logs</h2>
+            {stockLogs.length === 0 ? (
+              <p>No stock updates yet.</p>
+            ) : (
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>New Stock Level</th>
+                    <th>Updated By</th>
+                    <th>Timestamp</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {stockLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td>{log.item}</td>
+                      <td>{log.newValue}</td>
+                      <td>{log.user}</td>
+                      <td>
+                        {log.timestamp 
+                          ? log.timestamp.toDate().toLocaleString() 
+                          : "Just now"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>

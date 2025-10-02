@@ -10,19 +10,10 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// ✅ Firestore imports
-import {
-  doc,
-  updateDoc,
-  increment,
-  addDoc,
-  collection,
-  serverTimestamp,
-} from "firebase/firestore";
+import { doc, updateDoc, increment, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
 
-// Drink images
+// ✅ Drink images
 const drinks = {
   "Mango Cheesecake": require("./assets/images/mango-cheesecake.png"),
   "Mango Ice Cream": require("./assets/images/mango-ice-cream.png"),
@@ -35,16 +26,16 @@ const drinks = {
   "Mango Graham": require("./assets/images/mango-graham.png"),
 };
 
-// ✅ Mapping Firestore keys → Friendly names
-const friendlyNames = {
-  "chocolate-syrup": "Chocolate Syrup",
-  "strawberry-syrup": "Strawberry Syrup",
-  "crushed-grahams": "Crushed Grahams",
-  "ice-cream": "Ice Cream",
-  "oreo-crumble": "Oreo Crumble",
-  "oreo-grahams": "Oreo Grahams",
-  "pearl": "Pearl",
-  "sliced-mango": "Sliced Mango",
+// ✅ CORRECTED: Map from display names to Firebase keys
+const firebaseAddonKeys = {
+  "Pearl": "pearl",
+  "Crushed Grahams": "crushed-grahams", 
+  "Oreo Crumble": "oreo-crumble",
+  "Oreo Grahams": "oreo-grahams",
+  "Strawberry Syrup": "strawberry-syrup",
+  "Chocolate Syrup": "chocolate-syrup",
+  "Sliced Mango": "sliced-mango",
+  "Ice Cream": "ice-cream",
 };
 
 export default function OrderReviewScreen({ route, navigation }) {
@@ -69,31 +60,58 @@ export default function OrderReviewScreen({ route, navigation }) {
     Alert.alert("Edit feature coming soon!");
   };
 
-  // ✅ Proceed button updates Firestore (cups + straw + add-ons + orders)
+  // ✅ FIXED: Proceed button now saves orders to Firestore
   const handleProceed = async () => {
     try {
+      // ✅ FIRST: Check ALL inventory BEFORE deducting anything
+      const addonsSnap = await getDoc(doc(db, "inventory", "add-ons"));
+      const currentAddons = addonsSnap.data();
+
+      // Check if we have enough stock for ALL items first
       for (let item of items) {
-        let field = "";
+        if (item.addOns && item.addOns.length > 0) {
+          for (let addOn of item.addOns) {
+            const dbKey = firebaseAddonKeys[addOn]; // Get the Firestore key
+
+            if (dbKey) {
+              const subtractAmount = item.quantity;
+              const current = currentAddons[dbKey] || 0;
+
+              if (current < subtractAmount) {
+                Alert.alert("Error", `Not enough ${addOn} in stock. Available: ${current}, Needed: ${subtractAmount}`);
+                return; // Stop here before deducting anything
+              }
+            } else {
+              Alert.alert("Error", `Invalid add-on: ${addOn}`);
+              return;
+            }
+          }
+        }
+      }
+
+      // ✅ SECOND: Only if ALL checks pass, deduct inventory AND save orders
+      for (let item of items) {
+        let cupField = "";
         let strawField = "";
 
-        // ✅ Subtract cups + decide which straw
+        // ✅ Select correct cup & straw
         if (item.size === "TALL") {
-          field = "tall";
+          cupField = "tall";
           strawField = "regular";
         }
         if (item.size === "GRANDE") {
-          field = "grande";
+          cupField = "grande";
           strawField = "regular";
         }
         if (item.size === "1LITER") {
-          field = "liter";
+          cupField = "liter";
           strawField = "big";
         }
 
         // ✅ Update cups
-        if (field) {
+        if (cupField) {
           await updateDoc(doc(db, "inventory", "cups"), {
-            [field]: increment(-item.quantity),
+            [cupField]: increment(-item.quantity),
           });
         }
 
@@ -104,14 +122,11 @@ export default function OrderReviewScreen({ route, navigation }) {
           });
         }
 
-        // ✅ Update add-ons
+        // ✅ Update add-ons (subtract per quantity)
         if (item.addOns && item.addOns.length > 0) {
           for (let addOn of item.addOns) {
-            // Convert friendly name → Firestore key
-            const dbKey = Object.keys(friendlyNames).find(
-              (key) => friendlyNames[key] === addOn
-            );
-
+            const dbKey = firebaseAddonKeys[addOn];
+            
             if (dbKey) {
               await updateDoc(doc(db, "inventory", "add-ons"), {
                 [dbKey]: increment(-item.quantity),
@@ -120,13 +135,14 @@ export default function OrderReviewScreen({ route, navigation }) {
           }
         }
 
-        // ✅ Save order into Firestore "orders" collection
+        // ✅ SAVE ORDER TO FIRESTORE (This was missing!)
         await addDoc(collection(db, "orders"), {
           flavor: item.flavor,
           size: item.size,
           addOns: item.addOns,
           quantity: item.quantity,
           price: item.price,
+          notes: item.notes || "",
           createdAt: serverTimestamp(),
         });
       }
@@ -147,10 +163,7 @@ export default function OrderReviewScreen({ route, navigation }) {
         <Text style={styles.detailText}>Size: {item.size}</Text>
         {item.addOns.length > 0 && (
           <Text style={styles.detailText}>
-            Add-ons:{" "}
-            {item.addOns
-              .map((addOn) => friendlyNames[addOn] || addOn)
-              .join(", ")}
+            Add-ons: {item.addOns.join(", ")}
           </Text>
         )}
         <Text style={styles.detailText}>Quantity: {item.quantity}</Text>
