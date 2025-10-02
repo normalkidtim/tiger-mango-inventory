@@ -12,7 +12,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // ✅ Firestore imports
-import { doc, updateDoc, increment } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  increment,
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 // Drink images
@@ -62,7 +69,7 @@ export default function OrderReviewScreen({ route, navigation }) {
     Alert.alert("Edit feature coming soon!");
   };
 
-  // ✅ Proceed button updates Firestore (cups + straw + add-ons)
+  // ✅ Proceed button updates Firestore (cups + straw + add-ons + orders)
   const handleProceed = async () => {
     try {
       for (let item of items) {
@@ -112,6 +119,16 @@ export default function OrderReviewScreen({ route, navigation }) {
             }
           }
         }
+
+        // ✅ Save order into Firestore "orders" collection
+        await addDoc(collection(db, "orders"), {
+          flavor: item.flavor,
+          size: item.size,
+          addOns: item.addOns,
+          quantity: item.quantity,
+          price: item.price,
+          createdAt: serverTimestamp(),
+        });
       }
 
       Alert.alert("Success", "Order placed and inventory updated!");
@@ -157,7 +174,7 @@ export default function OrderReviewScreen({ route, navigation }) {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.container}>
       <StatusBar translucent={true} backgroundColor="transparent" />
 
       <View style={styles.header}>
@@ -195,8 +212,8 @@ export default function OrderReviewScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#E53935", padding: 16 },
-  header: { alignItems: "center", marginBottom: 20, marginTop: 10 },
+  container: { flex: 1, backgroundColor: "#E53935", padding: 16 },
+  header: { alignItems: "center", marginBottom: 20 },
   title: { fontSize: 24, fontWeight: "bold", color: "white" },
   totalText: {
     fontSize: 20,
