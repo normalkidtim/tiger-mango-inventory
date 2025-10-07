@@ -1,0 +1,246 @@
+// AdminPanel.jsx
+import React, { useState, useEffect } from 'react';
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { db, auth } from './firebase';
+import { useAuth } from './AuthContext';
+
+export default function AdminPanel() {
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [activeUsers, setActiveUsers] = useState([]);
+  const [loading, setLoading] = useState({});
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    // Listen for pending users
+    const unsubPending = onSnapshot(collection(db, 'pending-users'), (snap) => {
+      let users = [];
+      snap.forEach((docSnap) => {
+        users.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setPendingUsers(users);
+    });
+
+    // Listen for active users
+    const unsubActive = onSnapshot(collection(db, 'users'), (snap) => {
+      let users = [];
+      snap.forEach((docSnap) => {
+        users.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setActiveUsers(users);
+    });
+
+    return () => {
+      unsubPending();
+      unsubActive();
+    };
+  }, []);
+
+  const approveUser = async (pendingUser, finalRole) => {
+    try {
+      setLoading(prev => ({ ...prev, [pendingUser.id]: true }));
+
+      // 1. Create the user in Firebase Auth
+      const { user } = await createUserWithEmailAndPassword(
+        auth, 
+        pendingUser.email, 
+        pendingUser.password
+      );
+
+      // 2. Add to active users collection
+      await addDoc(collection(db, 'users'), {
+        uid: user.uid,
+        email: pendingUser.email,
+        firstName: pendingUser.firstName,
+        lastName: pendingUser.lastName,
+        role: finalRole,
+        isActive: true,
+        approvedBy: currentUser.email,
+        approvedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
+
+      // 3. Remove from pending users
+      await deleteDoc(doc(db, 'pending-users', pendingUser.id));
+
+      // 4. Log the approval
+      await addDoc(collection(db, 'admin-logs'), {
+        action: 'user_approved',
+        admin: currentUser.email,
+        userEmail: pendingUser.email,
+        role: finalRole,
+        timestamp: serverTimestamp()
+      });
+
+      alert(`✅ ${pendingUser.email} has been approved as ${finalRole}!`);
+
+    } catch (error) {
+      console.error('Approval error:', error);
+      alert('❌ Failed to approve user: ' + error.message);
+    } finally {
+      setLoading(prev => ({ ...prev, [pendingUser.id]: false }));
+    }
+  };
+
+  const rejectUser = async (pendingUser) => {
+    if (window.confirm(`Are you sure you want to reject ${pendingUser.email}?`)) {
+      try {
+        await deleteDoc(doc(db, 'pending-users', pendingUser.id));
+        
+        await addDoc(collection(db, 'admin-logs'), {
+          action: 'user_rejected',
+          admin: currentUser.email,
+          userEmail: pendingUser.email,
+          timestamp: serverTimestamp()
+        });
+
+        alert(`❌ ${pendingUser.email} has been rejected.`);
+      } catch (error) {
+        console.error('Rejection error:', error);
+        alert('Failed to reject user: ' + error.message);
+      }
+    }
+  };
+
+  const deactivateUser = async (user) => {
+    if (window.confirm(`Are you sure you want to deactivate ${user.email}?`)) {
+      try {
+        await updateDoc(doc(db, 'users', user.id), {
+          isActive: false,
+          deactivatedAt: serverTimestamp(),
+          deactivatedBy: currentUser.email
+        });
+
+        alert(`🔒 ${user.email} has been deactivated.`);
+      } catch (error) {
+        console.error('Deactivation error:', error);
+        alert('Failed to deactivate user: ' + error.message);
+      }
+    }
+  };
+
+  const activateUser = async (user) => {
+    try {
+      await updateDoc(doc(db, 'users', user.id), {
+        isActive: true,
+        reactivatedAt: serverTimestamp(),
+        reactivatedBy: currentUser.email
+      });
+
+      alert(`✅ ${user.email} has been activated.`);
+    } catch (error) {
+      console.error('Activation error:', error);
+      alert('Failed to activate user: ' + error.message);
+    }
+  };
+
+  return (
+    <div className="admin-panel">
+      <h2>👑 Admin Panel - User Management</h2>
+      
+      {/* Pending Approvals Section */}
+      <div className="admin-section">
+        <h3>⏳ Pending Approval ({pendingUsers.length})</h3>
+        {pendingUsers.length === 0 ? (
+          <p className="no-data">No pending registration requests.</p>
+        ) : (
+          <div className="user-grid">
+            {pendingUsers.map(user => (
+              <div key={user.id} className="user-card pending">
+                <div className="user-info">
+                  <h4>{user.firstName} {user.lastName}</h4>
+                  <p>📧 {user.email}</p>
+                  <p>🎯 Requested: {user.requestedRole}</p>
+                  <p>📅 Requested: {user.requestedAt}</p>
+                </div>
+                <div className="user-actions">
+                  <label>Approve as:</label>
+                  <select 
+                    id={`role-${user.id}`}
+                    defaultValue={user.requestedRole}
+                  >
+                    <option value="employee">Employee</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <button 
+                    onClick={() => approveUser(user, document.getElementById(`role-${user.id}`).value)}
+                    disabled={loading[user.id]}
+                    className="btn-approve"
+                  >
+                    {loading[user.id] ? 'Approving...' : '✅ Approve'}
+                  </button>
+                  <button 
+                    onClick={() => rejectUser(user)}
+                    disabled={loading[user.id]}
+                    className="btn-reject"
+                  >
+                    ❌ Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Active Users Section */}
+      <div className="admin-section">
+        <h3>✅ Active Users ({activeUsers.filter(u => u.isActive).length})</h3>
+        {activeUsers.filter(u => u.isActive).length === 0 ? (
+          <p className="no-data">No active users.</p>
+        ) : (
+          <div className="user-grid">
+            {activeUsers.filter(u => u.isActive).map(user => (
+              <div key={user.id} className="user-card active">
+                <div className="user-info">
+                  <h4>{user.firstName} {user.lastName}</h4>
+                  <p>📧 {user.email}</p>
+                  <p>🎯 Role: <span className={`role-badge ${user.role}`}>{user.role}</span></p>
+                  <p>✅ Active since: {user.approvedAt?.toDate?.()?.toLocaleDateString() || 'Recently'}</p>
+                </div>
+                <div className="user-actions">
+                  <button 
+                    onClick={() => deactivateUser(user)}
+                    className="btn-deactivate"
+                  >
+                    🔒 Deactivate
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Inactive Users Section */}
+      <div className="admin-section">
+        <h3>🔒 Inactive Users ({activeUsers.filter(u => !u.isActive).length})</h3>
+        {activeUsers.filter(u => !u.isActive).length === 0 ? (
+          <p className="no-data">No inactive users.</p>
+        ) : (
+          <div className="user-grid">
+            {activeUsers.filter(u => !u.isActive).map(user => (
+              <div key={user.id} className="user-card inactive">
+                <div className="user-info">
+                  <h4>{user.firstName} {user.lastName}</h4>
+                  <p>📧 {user.email}</p>
+                  <p>🎯 Role: <span className={`role-badge ${user.role}`}>{user.role}</span></p>
+                  <p>❌ Deactivated</p>
+                </div>
+                <div className="user-actions">
+                  <button 
+                    onClick={() => activateUser(user)}
+                    className="btn-activate"
+                  >
+                    ✅ Activate
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

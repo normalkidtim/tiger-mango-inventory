@@ -1,90 +1,111 @@
-import React, { useEffect, useState } from "react";
-import {
-  collection,
-  onSnapshot,
-  updateDoc,
-  doc,
-  addDoc,
-  serverTimestamp
-} from "firebase/firestore";
-import { db } from "./firebase";
+// App.jsx
+import React, { useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
+import Login from "./Login";
+import Register from "./Register";
 import "./App.css";
 
-export default function App() {
-  const [cups, setCups] = useState({});
-  const [straws, setStraws] = useState({});
-  const [addons, setAddons] = useState({});
-  const [stockLogs, setStockLogs] = useState([]);
+function Dashboard() {
+  const { currentUser, logout } = useAuth();
+  const [userRole, setUserRole] = useState('employee');
   const [activeTab, setActiveTab] = useState("inventory");
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  
+  // Inventory state
+  const [cups, setCups] = useState({ tall: 0, grande: 0, liter: 0 });
+  const [straws, setStraws] = useState({ regular: 0, big: 0 });
+  const [addons, setAddons] = useState({
+    'chocolate-syrup': 0,
+    'strawberry-syrup': 0,
+    'crushed-grahams': 0,
+    'ice-cream': 0,
+    'oreo-crumble': 0,
+    'pearl': 0,
+    'sliced-mango': 0
+  });
+  const [stockLogs, setStockLogs] = useState([]);
 
   useEffect(() => {
-    // ✅ Inventory listener
-    const unsubInventory = onSnapshot(collection(db, "inventory"), (snap) => {
-      snap.forEach((docSnap) => {
-        const data = docSnap.data();
-        
-        if (docSnap.id === "cups") {
-          setCups(data);
-        }
-        if (docSnap.id === "straw") {
-          setStraws(data);
-        }
-        if (docSnap.id === "straws") {
-          setStraws(data);
-        }
-        if (docSnap.id === "add-ons") {
-          setAddons(data);
-        }
-      });
-    });
-
-    // ✅ Stock Logs
-    const unsubLogs = onSnapshot(collection(db, "stock-logs"), (snap) => {
-      let logs = [];
-      snap.forEach((docSnap) => {
-        logs.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      logs.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
-      setStockLogs(logs);
-    });
-
-    return () => {
-      unsubInventory();
-      unsubLogs();
-    };
-  }, []);
-
-  // ✅ Update stock + log it
-  const handleStockChange = async (collectionName, field, value, itemName) => {
-    try {
-      const numericValue = Number(value);
+    if (currentUser) {
+      setUserRole(currentUser.role || 'employee');
       
-      if (isNaN(numericValue) || numericValue < 0) {
-        alert("❌ Please enter a valid number");
-        return;
-      }
-
-      // Update the inventory collection
-      await updateDoc(doc(db, "inventory", collectionName), {
-        [field]: numericValue,
-      });
-
-      // Add a log entry
-      await addDoc(collection(db, "stock-logs"), {
-        item: itemName || `${collectionName} - ${field}`,
-        newValue: numericValue,
-        user: "employee",
-        timestamp: serverTimestamp(),
-      });
-
-      alert("✅ Stock updated successfully!");
-    } catch (err) {
-      console.error("Error updating stock:", err);
-      alert("❌ Failed to update stock");
+      // Load users for admin panel
+      const users = JSON.parse(localStorage.getItem('tigerMangoUsers') || '[]');
+      setAllUsers(users);
+      setPendingUsers(users.filter(user => !user.isActive && user.role === 'pending'));
+      
+      // Load inventory from localStorage
+      const savedInventory = JSON.parse(localStorage.getItem('tigerMangoInventory') || '{}');
+      if (savedInventory.cups) setCups(savedInventory.cups);
+      if (savedInventory.straws) setStraws(savedInventory.straws);
+      if (savedInventory.addons) setAddons(savedInventory.addons);
+      
+      // Load stock logs
+      const savedLogs = JSON.parse(localStorage.getItem('tigerMangoStockLogs') || '[]');
+      setStockLogs(savedLogs);
     }
+  }, [currentUser]);
+
+  const approveUser = (userEmail) => {
+    const users = JSON.parse(localStorage.getItem('tigerMangoUsers') || '[]');
+    const updatedUsers = users.map(user => 
+      user.email === userEmail ? { ...user, isActive: true, role: 'employee' } : user
+    );
+    localStorage.setItem('tigerMangoUsers', JSON.stringify(updatedUsers));
+    setAllUsers(updatedUsers);
+    setPendingUsers(updatedUsers.filter(user => !user.isActive && user.role === 'pending'));
+    alert(`✅ ${userEmail} has been approved!`);
   };
 
-  // ✅ Get friendly name for add-ons
+  const rejectUser = (userEmail) => {
+    const users = JSON.parse(localStorage.getItem('tigerMangoUsers') || '[]');
+    const updatedUsers = users.filter(user => user.email !== userEmail);
+    localStorage.setItem('tigerMangoUsers', JSON.stringify(updatedUsers));
+    setAllUsers(updatedUsers);
+    setPendingUsers(updatedUsers.filter(user => !user.isActive && user.role === 'pending'));
+    alert(`❌ ${userEmail} has been rejected.`);
+  };
+
+  const updateStock = (category, item, value) => {
+    const numericValue = Number(value);
+    if (isNaN(numericValue) || numericValue < 0) {
+      alert("❌ Please enter a valid number");
+      return;
+    }
+
+    // Update local state
+    if (category === 'cups') {
+      setCups(prev => ({ ...prev, [item]: numericValue }));
+    } else if (category === 'straws') {
+      setStraws(prev => ({ ...prev, [item]: numericValue }));
+    } else if (category === 'addons') {
+      setAddons(prev => ({ ...prev, [item]: numericValue }));
+    }
+
+    // Save to localStorage
+    const inventory = JSON.parse(localStorage.getItem('tigerMangoInventory') || '{}');
+    inventory[category] = category === 'cups' ? { ...cups, [item]: numericValue } :
+                         category === 'straws' ? { ...straws, [item]: numericValue } :
+                         { ...addons, [item]: numericValue };
+    localStorage.setItem('tigerMangoInventory', JSON.stringify(inventory));
+
+    // Add to stock logs
+    const newLog = {
+      id: Math.random().toString(36).substr(2, 9),
+      item: `${category} - ${item}`,
+      newValue: numericValue,
+      user: currentUser?.email || 'employee',
+      timestamp: new Date().toLocaleString()
+    };
+    
+    const updatedLogs = [newLog, ...stockLogs].slice(0, 50); // Keep last 50 logs
+    setStockLogs(updatedLogs);
+    localStorage.setItem('tigerMangoStockLogs', JSON.stringify(updatedLogs));
+
+    alert("✅ Stock updated successfully!");
+  };
+
   const getAddonDisplayName = (key) => {
     const names = {
       "chocolate-syrup": "Chocolate Syrup",
@@ -92,7 +113,6 @@ export default function App() {
       "crushed-grahams": "Crushed Grahams",
       "ice-cream": "Ice Cream",
       "oreo-crumble": "Oreo Crumble",
-      "oreo-grahams": "Oreo Grahams",
       "pearl": "Pearl",
       "sliced-mango": "Sliced Mango",
     };
@@ -101,15 +121,29 @@ export default function App() {
 
   return (
     <div className="dashboard">
-      {/* Sidebar */}
       <div className="sidebar">
-        <h2 className="sidebar-title">Tiger Mango (Employee)</h2>
+        <h2 className="sidebar-title">Tiger Mango</h2>
+        <div className="user-info">
+          <p>Welcome, {currentUser?.email}</p>
+          <p className="user-role">Role: {userRole}</p>
+          <button onClick={logout} className="logout-btn">
+            🚪 Logout
+          </button>
+        </div>
         <button onClick={() => setActiveTab("inventory")}>📦 Inventory Management</button>
         <button onClick={() => setActiveTab("logs")}>📜 Stock Update Logs</button>
+        
+        {/* Show different buttons based on role */}
+        {userRole === 'admin' && (
+          <button onClick={() => setActiveTab("admin")}>👑 User Management</button>
+        )}
+        <button onClick={() => setActiveTab("register")}>
+          {userRole === 'admin' ? '👤 Create User' : '👤 Request Access'}
+        </button>
       </div>
 
-      {/* Main Content */}
       <div className="main-content">
+        {/* INVENTORY MANAGEMENT */}
         {activeTab === "inventory" && (
           <div className="grid">
             {/* Cups */}
@@ -121,11 +155,9 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={cups.tall ?? cups.Tall ?? 0}
+                    value={cups.tall}
                     onChange={(e) => setCups(prev => ({...prev, tall: Number(e.target.value)}))}
-                    onBlur={(e) =>
-                      handleStockChange("cups", "tall", e.target.value, "Cups - Tall")
-                    }
+                    onBlur={(e) => updateStock("cups", "tall", e.target.value)}
                   />
                 </li>
                 <li>
@@ -133,11 +165,9 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={cups.grande ?? cups.Grande ?? 0}
+                    value={cups.grande}
                     onChange={(e) => setCups(prev => ({...prev, grande: Number(e.target.value)}))}
-                    onBlur={(e) =>
-                      handleStockChange("cups", "grande", e.target.value, "Cups - Grande")
-                    }
+                    onBlur={(e) => updateStock("cups", "grande", e.target.value)}
                   />
                 </li>
                 <li>
@@ -145,11 +175,9 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={cups.liter ?? cups.Liter ?? cups['1liter'] ?? 0}
+                    value={cups.liter}
                     onChange={(e) => setCups(prev => ({...prev, liter: Number(e.target.value)}))}
-                    onBlur={(e) =>
-                      handleStockChange("cups", "liter", e.target.value, "Cups - 1 Liter")
-                    }
+                    onBlur={(e) => updateStock("cups", "liter", e.target.value)}
                   />
                 </li>
               </ul>
@@ -164,11 +192,9 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={straws.regular ?? straws.Regular ?? 0}
+                    value={straws.regular}
                     onChange={(e) => setStraws(prev => ({...prev, regular: Number(e.target.value)}))}
-                    onBlur={(e) =>
-                      handleStockChange("straw", "regular", e.target.value, "Straws - Regular")
-                    }
+                    onBlur={(e) => updateStock("straws", "regular", e.target.value)}
                   />
                 </li>
                 <li>
@@ -176,11 +202,9 @@ export default function App() {
                   <input
                     type="number"
                     min="0"
-                    value={straws.big ?? straws.Big ?? 0}
+                    value={straws.big}
                     onChange={(e) => setStraws(prev => ({...prev, big: Number(e.target.value)}))}
-                    onBlur={(e) =>
-                      handleStockChange("straw", "big", e.target.value, "Straws - Big")
-                    }
+                    onBlur={(e) => updateStock("straws", "big", e.target.value)}
                   />
                 </li>
               </ul>
@@ -200,15 +224,13 @@ export default function App() {
                       <input
                         type="number"
                         min="0"
-                        value={addons[key] ?? 0}
+                        value={addons[key]}
                         onChange={(e) => {
                           const newAddons = {...addons};
                           newAddons[key] = Number(e.target.value);
                           setAddons(newAddons);
                         }}
-                        onBlur={(e) =>
-                          handleStockChange("add-ons", key, e.target.value, getAddonDisplayName(key))
-                        }
+                        onBlur={(e) => updateStock("addons", key, e.target.value)}
                       />
                     </li>
                   ))}
@@ -217,6 +239,7 @@ export default function App() {
           </div>
         )}
 
+        {/* STOCK LOGS */}
         {activeTab === "logs" && (
           <div className="card">
             <h2>📜 Stock Update Logs</h2>
@@ -238,11 +261,7 @@ export default function App() {
                       <td>{log.item}</td>
                       <td>{log.newValue}</td>
                       <td>{log.user}</td>
-                      <td>
-                        {log.timestamp 
-                          ? log.timestamp.toDate().toLocaleString() 
-                          : "Just now"}
-                      </td>
+                      <td>{log.timestamp}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -250,7 +269,100 @@ export default function App() {
             )}
           </div>
         )}
+
+        {/* REGISTRATION */}
+        {activeTab === "register" && (
+          <Register onToggleForm={() => setActiveTab("inventory")} />
+        )}
+
+        {/* ADMIN PANEL */}
+        {activeTab === "admin" && userRole === 'admin' && (
+          <div className="admin-panel">
+            <h2>👑 Admin Panel - User Management</h2>
+            
+            {/* Pending Approvals */}
+            <div className="admin-section">
+              <h3>⏳ Pending Approval ({pendingUsers.length})</h3>
+              {pendingUsers.length === 0 ? (
+                <p className="no-data">No pending registration requests.</p>
+              ) : (
+                <div className="user-grid">
+                  {pendingUsers.map(user => (
+                    <div key={user.uid} className="user-card pending">
+                      <div className="user-info">
+                        <h4>{user.firstName} {user.lastName}</h4>
+                        <p>📧 {user.email}</p>
+                        <p>📅 Registered: {new Date(user.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="user-actions">
+                        <button 
+                          onClick={() => approveUser(user.email)}
+                          className="btn-approve"
+                        >
+                          ✅ Approve
+                        </button>
+                        <button 
+                          onClick={() => rejectUser(user.email)}
+                          className="btn-reject"
+                        >
+                          ❌ Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Active Users */}
+            <div className="admin-section">
+              <h3>✅ Active Users ({allUsers.filter(u => u.isActive).length})</h3>
+              {allUsers.filter(u => u.isActive).length === 0 ? (
+                <p className="no-data">No active users.</p>
+              ) : (
+                <div className="user-grid">
+                  {allUsers.filter(u => u.isActive).map(user => (
+                    <div key={user.uid} className="user-card active">
+                      <div className="user-info">
+                        <h4>{user.firstName} {user.lastName}</h4>
+                        <p>📧 {user.email}</p>
+                        <p>🎯 Role: <span className={`role-badge ${user.role}`}>{user.role}</span></p>
+                        <p>✅ Active since: {new Date(user.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+export default function App() {
+  const [showLogin, setShowLogin] = useState(true);
+  const { currentUser } = useAuth();
+
+  // Show loading while checking auth
+  if (currentUser === undefined) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <h2>Loading...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return showLogin ? (
+      <Login onToggleForm={() => setShowLogin(false)} />
+    ) : (
+      <Register onToggleForm={() => setShowLogin(true)} />
+    );
+  }
+
+  return <Dashboard />;
 }
