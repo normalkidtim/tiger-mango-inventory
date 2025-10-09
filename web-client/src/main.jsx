@@ -1,22 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-// ✅ STEP 1: Import HashRouter instead of BrowserRouter
-import { HashRouter } from 'react-router-dom';
-import { AuthProvider } from './AuthContext.jsx';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App';
+import { AuthProvider } from './AuthContext';
 
+// These imports are crucial for your web client's design
 import './assets/styles/global.css';
 import './assets/styles/sidebar.css';
+import './assets/styles/inventory.css';
 import './assets/styles/tables.css';
-// Add any other global CSS imports you have here
+import './assets/styles/auth.css';
+import './assets/styles/filters.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {/* ✅ STEP 2: Use HashRouter here */}
-    <HashRouter>
+    <BrowserRouter>
       <AuthProvider>
         <App />
       </AuthProvider>
-    </HashRouter>
+    </BrowserRouter>
   </React.StrictMode>,
 );
