@@ -1,0 +1,19 @@
+:root {
+  --background-dark: #121212;
+  --background-light: #1E1E1E;
+  --gold-accent: #ffca28;
+  --gold-accent-hover: #e6b622;
+  --text-primary: #EAEAEA;
+  --text-secondary: #b0b0b0;
+  --border-color: #333333;
+  --font-main: 'Inter', 'Segoe UI', sans-serif;
+}
+html { font-size: 17px; }
+body {
+  margin: 0; padding: 0; font-family: var(--font-main);
+  background-color: var(--background-dark); color: var(--text-primary); line-height: 1.6;
+}
+h1, h2, h3, h4, h5, h6 { margin: 0 0 1rem 0; font-weight: 600; color: var(--text-primary); }
+h2 { font-size: 1.75rem; }
+.page-header { display: flex; align-items: center; gap: 12px; font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+.page-header-underline { height: 3px; width: 100%; background: var(--gold-accent); border-radius: 2px; margin-bottom: 24px; }

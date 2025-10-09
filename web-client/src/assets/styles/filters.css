@@ -1,0 +1,48 @@
+/* src/assets/styles/filters.css */
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--background-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.filter-group input[type="date"],
+.filter-group input[type="text"] {
+  font-family: var(--font-main);
+  background-color: var(--background-dark);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 10px;
+  outline: none;
+}
+
+/* Style for the date picker icon */
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}
+
+/* ✅ New style for outline buttons */
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+.btn-outline:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}

@@ -1,0 +1,10 @@
+.table-box { background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; overflow-x: auto; }
+.table-box table { width: 100%; border-collapse: collapse; }
+.table-box th {
+  background: rgba(255, 202, 40, 0.1); color: var(--gold-accent); padding: 12px 15px; text-align: left;
+  font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.table-box td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-size: 1rem; color: var(--text-secondary); }
+.table-box tbody tr:last-child td { border-bottom: none; }
+.table-box tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+.no-data { text-align: center; padding: 40px; color: var(--text-secondary); font-style: italic; }

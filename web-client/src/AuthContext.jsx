@@ -1,5 +1,12 @@
 // AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth, db } from './firebase'; // We now use the real firebase
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -11,96 +18,51 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  function signup(email, password, firstName, lastName) {
-    return new Promise((resolve, reject) => {
-      try {
-        // Check if user already exists
-        const users = JSON.parse(localStorage.getItem('tigerMangoUsers') || '[]');
-        const existingUser = users.find(user => user.email === email);
-        
-        if (existingUser) {
-          reject(new Error('Email already exists'));
-          return;
-        }
+  // Sign in with Firebase
+  async function login(email, password) {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-        // Create new user
-        const newUser = {
-          uid: Math.random().toString(36).substr(2, 9),
-          email,
-          password,
-          firstName,
-          lastName,
-          role: users.length === 0 ? 'admin' : 'pending',
-          isActive: users.length === 0,
-          createdAt: new Date().toISOString()
-        };
-
-        // Save to localStorage
-        users.push(newUser);
-        localStorage.setItem('tigerMangoUsers', JSON.stringify(users));
-        
-        // If first user, auto-login
-        if (users.length === 1) {
-          localStorage.setItem('tigerMangoCurrentUser', JSON.stringify(newUser));
-          setCurrentUser(newUser);
-        }
-
-        resolve({ user: newUser });
-      } catch (error) {
-        reject(error);
-      }
-    });
+    // Get user role from Firestore 'users' collection
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists()) {
+      // Add the role to the user object
+      user.role = userDoc.data().role;
+    } else {
+      user.role = 'employee'; // Default role if not found
+    }
+    setCurrentUser(user);
+    return userCredential;
   }
 
-  function login(email, password) {
-    return new Promise((resolve, reject) => {
-      try {
-        const users = JSON.parse(localStorage.getItem('tigerMangoUsers') || '[]');
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-          if (!user.isActive && user.role !== 'admin') {
-            reject(new Error('Account pending admin approval'));
-            return;
-          }
-          
-          localStorage.setItem('tigerMangoCurrentUser', JSON.stringify(user));
-          setCurrentUser(user);
-          resolve({ user });
-        } else {
-          reject(new Error('Invalid email or password'));
-        }
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
+  // Sign out with Firebase
   function logout() {
-    localStorage.removeItem('tigerMangoCurrentUser');
-    setCurrentUser(null);
-    return Promise.resolve();
+    return signOut(auth);
   }
 
   useEffect(() => {
-    // Check if user is logged in
-    const savedUser = localStorage.getItem('tigerMangoCurrentUser');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        setCurrentUser(user);
-      } catch (error) {
-        localStorage.removeItem('tigerMangoCurrentUser');
+    // Listen for authentication state changes
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // If a user is logged in, fetch their role from Firestore
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          user.role = userDoc.data().role;
+        } else {
+          user.role = 'employee';
+        }
       }
-    }
-    setLoading(false);
+      setCurrentUser(user);
+      setLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
 
   const value = {
     currentUser,
-    signup,
     login,
-    logout
+    logout,
   };
 
   return (
