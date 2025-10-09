@@ -5,7 +5,7 @@ import Layout from './Layout';
 import Login from './Login';
 import Inventory from './pages/Inventory';
 import StockLogs from './pages/StockLogs';
-import PurchaseHistory from './pages/PurchaseHistory'; // ✅ Import the new page
+import PurchaseHistory from './pages/PurchaseHistory';
 
 function ProtectedRoutes() {
   const { currentUser } = useAuth();
@@ -22,13 +22,18 @@ function ProtectedRoutes() {
 }
 
 export default function App() {
+  const { currentUser } = useAuth(); // ✅ Get currentUser to check login status
+
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      {/* ✅ If the user is logged in and tries to go to /login, redirect them to home */}
+      <Route 
+        path="/login" 
+        element={currentUser ? <Navigate to="/" /> : <Login />} 
+      />
       
       <Route element={<ProtectedRoutes />}>
         <Route path="/" element={<Inventory />} />
-        {/* ✅ Added the new route here */}
         <Route path="/purchase-history" element={<PurchaseHistory />} />
         <Route path="/stock-logs" element={<StockLogs />} />
       </Route>

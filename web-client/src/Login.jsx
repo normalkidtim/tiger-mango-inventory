@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ Import useNavigate
 import { useAuth } from './AuthContext';
 
 export default function Login() {
@@ -6,7 +7,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
   const { login } = useAuth();
+  const navigate = useNavigate(); // ✅ Initialize the navigate function
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -14,6 +17,8 @@ export default function Login() {
       setError('');
       setLoading(true);
       await login(email, password);
+      // ✅ On success, navigate to the homepage
+      navigate('/'); 
     } catch (err) {
       setError('Failed to log in. Please check your email and password.');
       console.error(err);

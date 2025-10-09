@@ -1,60 +1,74 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, Image, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MenuScreen from './MenuScreen';
 import OrderScreen from './OrderScreen';
 import OrderReviewScreen from './OrderReviewScreen';
+import { COLORS, SIZES, FONTS } from './styles';
 
 // Import your images
-const flavorBanner1 = require('./assets/images/flavorbanner1.png');
-const flavorBanner2 = require('./assets/images/flavorbanner2.png');
+// ✅ FINAL FIX: Changed the file extension from .jpg to .png to match your folder
+const logo = require('./assets/logos/logo-black.png'); 
+const featuredDrinks = [
+  { name: 'Mango Cheesecake', image: require('./assets/images/mango-cheesecake.png') },
+  { name: 'Mango Strawberry', image: require('./assets/images/mango-strawberry.png') },
+  { name: 'Tiger Combo', image: require('./assets/images/tiger-combo.png') },
+];
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Menu"
-          component={MenuScreen}
-          options={{ headerShown: false }} // Hide header for MenuScreen
-        />
-        <Stack.Screen
-          name="OrderScreen"
-          component={OrderScreen}
-          options={{ headerShown: false }} // Hide header for OrderScreen
-        />
-        <Stack.Screen
-          name="OrderReviewScreen"
-          component={OrderReviewScreen}
-          options={{ headerShown: false }} // Hide header for OrderReviewScreen
-        />
+      <Stack.Navigator 
+        initialRouteName="Home"
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Menu" component={MenuScreen} />
+        <Stack.Screen name="OrderScreen" component={OrderScreen} />
+        <Stack.Screen name="OrderReviewScreen" component={OrderReviewScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
 function HomeScreen({ navigation }) {
+  const renderFeaturedItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.featuredCard}
+      onPress={() => navigation.navigate('OrderScreen', { selectedFlavor: item.name })}
+    >
+      <Image source={item.image} style={styles.featuredImage} />
+      <Text style={styles.featuredTitle}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar translucent={true} backgroundColor="transparent" />
-      <Image source={flavorBanner1} style={styles.bannerTop} resizeMode="cover" />
-      <View style={styles.redSection}>
-        <Text style={styles.flavorsText}>FLAVORS</Text>
-        <Image source={flavorBanner2} style={styles.drinkGrid} resizeMode="contain" />
+      <View style={styles.header}>
+        <Image source={logo} style={styles.logo} />
+      </View>
+      <Text style={styles.tagline}>Feel the Natural Taste of Mango</Text>
+      
+      <Text style={styles.sectionHeader}>Popular Orders</Text>
+      <FlatList
+        data={featuredDrinks}
+        renderItem={renderFeaturedItem}
+        keyExtractor={(item) => item.name}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: SIZES.padding }}
+      />
+      
+      <View style={styles.footer}>
         <TouchableOpacity
           style={styles.orderButton}
           onPress={() => navigation.navigate('Menu')}
         >
-          <Text style={styles.orderButtonText}>ORDER</Text>
+          <Text style={styles.orderButtonText}>Start Your Order</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -62,34 +76,34 @@ function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  bannerTop: { width: '100%', height: 200 },
-  redSection: {
-    flex: 1,
-    backgroundColor: '#E53935',
+  container: { flex: 1, backgroundColor: COLORS.white },
+  header: { alignItems: 'center', paddingVertical: 20 },
+  logo: { width: 150, height: 100, resizeMode: 'contain' },
+  tagline: { ...FONTS.h2, textAlign: 'center', paddingHorizontal: SIZES.padding, marginBottom: 30 },
+  sectionHeader: { ...FONTS.h3, paddingHorizontal: SIZES.padding, marginBottom: 20 },
+  featuredCard: { 
+    backgroundColor: COLORS.lightGray, 
+    borderRadius: 16, 
+    padding: 15, 
+    marginRight: 15, 
     alignItems: 'center',
-    paddingTop: 20,
+    width: 160,
   },
-  flavorsText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 20,
+  featuredImage: { width: 100, height: 100, resizeMode: 'contain', marginBottom: 10 },
+  featuredTitle: { ...FONTS.body, fontWeight: '600' },
+  footer: {
+    padding: SIZES.padding,
+    marginTop: 'auto',
   },
-  drinkGrid: { width: '90%', height: 320, marginVertical: 20 },
   orderButton: {
-    width: 200,
-    height: 44,
-    backgroundColor: '#FFD700',
-    borderRadius: 12,
-    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    padding: 20,
+    borderRadius: 30,
     alignItems: 'center',
-    marginTop: 30,
   },
   orderButtonText: {
+    ...FONTS.h3,
+    color: COLORS.white,
     fontSize: 18,
-    fontWeight: 'bold',
-    color: 'black',
   },
 });

@@ -1,16 +1,8 @@
 import React from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  StatusBar,
-} from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Image, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { COLORS, SIZES, FONTS, globalStyles } from './styles';
 
-// ✅ Drink images
 const drinks = {
   "Mango Cheesecake": require("./assets/images/mango-cheesecake.png"),
   "Mango Ice Cream": require("./assets/images/mango-ice-cream.png"),
@@ -33,68 +25,62 @@ export default function MenuScreen({ navigation }) {
     >
       <Image source={drinks[item]} style={styles.cardImage} />
       <Text style={styles.cardTitle}>{item}</Text>
+      <View style={styles.plusButton}>
+        <Text style={styles.plusText}>+</Text>
+      </View>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#E53935" />
-      <Text style={styles.title}>Our Menu</Text>
+    <SafeAreaView style={globalStyles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <View style={{ paddingHorizontal: SIZES.padding }}>
+        <Text style={styles.title}>Our Menu</Text>
+      </View>
       <FlatList
         data={menuItems}
         renderItem={renderItem}
         keyExtractor={(item) => item}
         numColumns={2}
         columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={{ paddingHorizontal: SIZES.padding }}
       />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#E53935", // Red background
-    padding: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  list: {
-    paddingBottom: 80,
-  },
-  row: {
-    justifyContent: "space-between",
-  },
+const styles = {
+  title: { ...FONTS.h1, textAlign: "center", marginBottom: SIZES.padding },
+  row: { justifyContent: "space-between" },
   card: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: SIZES.padding,
     alignItems: "center",
     flex: 1,
-    marginHorizontal: 4,
-    elevation: 3, // Android shadow
-    shadowColor: "#000", // iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    marginHorizontal: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
-  cardImage: {
-    width: 100,
-    height: 100,
-    resizeMode: "contain",
-    marginBottom: 8,
+  cardImage: { width: 120, height: 120, resizeMode: "contain", marginBottom: 12 },
+  cardTitle: { ...FONTS.body, fontWeight: "600", textAlign: "center" },
+  plusButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 30,
+    height: 30,
+    backgroundColor: COLORS.accent,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#333",
-  },
-});
+  plusText: {
+    fontSize: 20,
+    color: COLORS.text,
+  }
+};

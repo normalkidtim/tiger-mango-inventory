@@ -10,8 +10,10 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons'; // ✅ Use the correct, built-in icon library
+import { COLORS, SIZES, FONTS, globalStyles } from './styles';
 
-// Import drink images
+// ... (keep the `drinks`, `prices`, and `addOnsList` constants as they are)
 const drinks = {
   'Mango Cheesecake': require('./assets/images/mango-cheesecake.png'),
   'Mango Ice Cream': require('./assets/images/mango-ice-cream.png'),
@@ -23,44 +25,25 @@ const drinks = {
   'Mango Chips': require('./assets/images/mango-chips.png'),
   'Mango Graham': require('./assets/images/mango-graham.png'),
 };
-
-// Price map
-const prices = {
-  TALL: 85,
-  GRANDE: 100,
-  '1LITER': 135,
-};
-
-// ✅ Add-ons (matching your database)
+const prices = { TALL: 85, GRANDE: 100, '1LITER': 135 };
 const addOnsList = [
-  'Pearl',
-  'Crushed Grahams',
-  'Oreo Crumble',
-  'Oreo Grahams',
-  'Strawberry Syrup',
-  'Chocolate Syrup',
-  'Sliced Mango',
-  'Ice Cream',
+  'Pearl', 'Crushed Grahams', 'Oreo Crumble', 'Oreo Grahams', 'Strawberry Syrup',
+  'Chocolate Syrup', 'Sliced Mango', 'Ice Cream',
 ];
+
 
 export default function OrderScreen({ navigation, route }) {
   const existingItems = route.params?.items || [];
-
-  // ✅ Default to selected flavor from MenuScreen (if provided)
-  const [selectedFlavor, setSelectedFlavor] = useState(
-    route.params?.selectedFlavor || 'Mango Cheesecake'
-  );
+  const [selectedFlavor, setSelectedFlavor] = useState(route.params?.selectedFlavor || 'Mango Cheesecake');
   const [selectedSize, setSelectedSize] = useState('TALL');
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
   const toggleAddOn = (addOn) => {
-    if (selectedAddOns.includes(addOn)) {
-      setSelectedAddOns(selectedAddOns.filter((item) => item !== addOn));
-    } else {
-      setSelectedAddOns([...selectedAddOns, addOn]);
-    }
+    setSelectedAddOns((prev) =>
+      prev.includes(addOn) ? prev.filter((item) => item !== addOn) : [...prev, addOn]
+    );
   };
 
   const handlePlaceOrder = () => {
@@ -73,263 +56,262 @@ export default function OrderScreen({ navigation, route }) {
       notes,
       price: prices[selectedSize] * quantity,
     };
-
     const allItems = [...existingItems, newItem];
     navigation.navigate('OrderReviewScreen', { items: allItems });
   };
 
-  const handleGoBack = () => {
-    navigation.navigate('Menu');
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar translucent={true} backgroundColor="transparent" />
+    <SafeAreaView style={globalStyles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Back Button */}
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← BACK</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                {/* ✅ Use the correct icon component */}
+                <Feather name="arrow-left" size={24} color={COLORS.text} />
+            </TouchableOpacity>
         </View>
 
-        {/* Big Image */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={drinks[selectedFlavor]}
-            style={styles.bigImage}
-            resizeMode="contain"
-          />
-        </View>
+        <Image source={drinks[selectedFlavor]} style={styles.mainImage} />
+        
+        <View style={styles.optionsContainer}>
+            <Text style={styles.flavorTitle}>{selectedFlavor}</Text>
 
-        {/* Flavor Grid */}
-        <Text style={styles.sectionTitle}>SELECT FLAVOR</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.flavorScroll}
-        >
-          <View style={styles.flavorGrid}>
-            {Object.keys(drinks).map((flavor) => (
-              <TouchableOpacity
-                key={flavor}
-                style={[
-                  styles.flavorButton,
-                  selectedFlavor === flavor && styles.flavorButtonSelected,
-                ]}
-                onPress={() => setSelectedFlavor(flavor)}
-              >
-                <Text
-                  style={[
-                    styles.flavorText,
-                    selectedFlavor === flavor && styles.flavorTextSelected,
-                  ]}
+            <Text style={styles.sectionTitle}>Flavor</Text>
+            <View style={styles.optionsGrid}>
+                {Object.keys(drinks).map((flavor) => (
+                <TouchableOpacity
+                    key={flavor}
+                    style={[ styles.optionButton, selectedFlavor === flavor && styles.optionButtonSelected ]}
+                    onPress={() => setSelectedFlavor(flavor)}
                 >
-                  {flavor}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+                    <Text style={[ styles.optionButtonText, selectedFlavor === flavor && styles.optionButtonTextSelected ]}>
+                    {flavor}
+                    </Text>
+                </TouchableOpacity>
+                ))}
+            </View>
 
-        {/* Size Selection */}
-        <Text style={styles.sectionTitle}>SIZE</Text>
-        <View style={styles.sizeContainer}>
-          {Object.keys(prices).map((size) => (
-            <TouchableOpacity
-              key={size}
-              style={[
-                styles.sizeButton,
-                selectedSize === size && styles.sizeButtonSelected,
-              ]}
-              onPress={() => setSelectedSize(size)}
-            >
-              <Text
-                style={[
-                  styles.sizeText,
-                  selectedSize === size && styles.sizeTextSelected,
-                ]}
-              >
-                {size}
-              </Text>
-            </TouchableOpacity>
-          ))}
+            <Text style={styles.sectionTitle}>Size</Text>
+            <View style={styles.optionsGrid}>
+                {Object.keys(prices).map((size) => (
+                <TouchableOpacity
+                    key={size}
+                    style={[ styles.optionButton, selectedSize === size && styles.optionButtonSelected ]}
+                    onPress={() => setSelectedSize(size)}
+                >
+                    <Text style={[ styles.optionButtonText, selectedSize === size && styles.optionButtonTextSelected ]}>
+                    {size}
+                    </Text>
+                </TouchableOpacity>
+                ))}
+            </View>
+
+            <Text style={styles.sectionTitle}>Add-ons</Text>
+            <View style={styles.optionsGrid}>
+                {addOnsList.map((addOn) => (
+                <TouchableOpacity
+                    key={addOn}
+                    style={[ styles.optionButton, selectedAddOns.includes(addOn) && styles.optionButtonSelected ]}
+                    onPress={() => toggleAddOn(addOn)}
+                >
+                    <Text style={[ styles.optionButtonText, selectedAddOns.includes(addOn) && styles.optionButtonTextSelected ]}>
+                    {addOn}
+                    </Text>
+                </TouchableOpacity>
+                ))}
+            </View>
+
+            <Text style={styles.sectionTitle}>Quantity</Text>
+            <View style={styles.quantityContainer}>
+                <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                >
+                    <Text style={styles.quantityButtonText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{quantity}</Text>
+                <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => setQuantity(quantity + 1)}
+                >
+                    <Text style={styles.quantityButtonText}>+</Text>
+                </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionTitle}>Notes (Optional)</Text>
+            <TextInput
+                style={styles.notesInput}
+                placeholder="Add special instructions..."
+                placeholderTextColor="#999"
+                value={notes}
+                onChangeText={setNotes}
+            />
         </View>
-
-        {/* Add-ons */}
-        <Text style={styles.sectionTitle}>ADD ONS</Text>
-        <View style={styles.addOnsContainer}>
-          {addOnsList.map((addOn) => (
-            <TouchableOpacity
-              key={addOn}
-              style={[
-                styles.addOnButton,
-                selectedAddOns.includes(addOn) && styles.addOnButtonSelected,
-              ]}
-              onPress={() => toggleAddOn(addOn)}
-            >
-              <Text
-                style={[
-                  styles.addOnText,
-                  selectedAddOns.includes(addOn) && styles.addOnTextSelected,
-                ]}
-              >
-                {addOn}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Quantity */}
-        <Text style={styles.sectionTitle}>QUANTITY</Text>
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity
-            style={styles.quantityButton}
-            onPress={() => setQuantity(Math.max(1, quantity - 1))}
-            disabled={quantity <= 1}
-          >
-            <Text style={styles.quantityButtonText}>-</Text>
-          </TouchableOpacity>
-          <Text style={styles.quantityText}>{quantity}</Text>
-          <TouchableOpacity
-            style={styles.quantityButton}
-            onPress={() => setQuantity(quantity + 1)}
-          >
-            <Text style={styles.quantityButtonText}>+</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Notes */}
-        <Text style={styles.sectionTitle}>NOTES (Optional)</Text>
-        <TextInput
-          style={styles.notesInput}
-          placeholder="Special instructions..."
-          placeholderTextColor="#999"
-          value={notes}
-          onChangeText={setNotes}
-          multiline={true}
-        />
-
-        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Place Order Button */}
-      <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
-        <Text style={styles.placeOrderButtonText}>PLACE ORDER</Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceLabel}>Total Price</Text>
+          <Text style={styles.priceValue}>₱{prices[selectedSize] * quantity}</Text>
+        </View>
+        <TouchableOpacity style={styles.addToCartButton} onPress={handlePlaceOrder}>
+          <Text style={styles.addToCartButtonText}>Add to Order</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#E53935', padding: 16 },
-  scrollContent: { paddingBottom: 80 },
-  header: { marginBottom: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: '#F4F5F7',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
   backButton: {
-    backgroundColor: '#333',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  backButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  imageContainer: {
-    height: 200,
-    marginBottom: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    alignItems: 'center',
-  },
-  bigImage: { width: '90%', height: '80%', resizeMode: 'contain' },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  flavorScroll: { marginBottom: 20 },
-  flavorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  flavorButton: {
-    backgroundColor: 'white',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
-  flavorButtonSelected: { backgroundColor: '#FFD700' },
-  flavorText: { fontSize: 14, fontWeight: '500', color: '#333' },
-  flavorTextSelected: { color: 'black', fontWeight: 'bold' },
-  sizeContainer: {
+  mainImage: {
+    width: '80%',
+    height: 250,
+    alignSelf: 'center',
+    resizeMode: 'contain',
+    marginTop: 10,
+  },
+  optionsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 120,
+  },
+  flavorTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#111',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  optionsGrid: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
     flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 24,
   },
-  sizeButton: {
-    backgroundColor: 'white',
+  optionButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
   },
-  sizeButtonSelected: { backgroundColor: '#FFD700' },
-  sizeText: { fontSize: 14, fontWeight: '500', color: '#333' },
-  sizeTextSelected: { color: 'black', fontWeight: 'bold' },
-  addOnsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
+  optionButtonSelected: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
   },
-  addOnButton: {
-    backgroundColor: '#333',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+  optionButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
   },
-  addOnButtonSelected: { backgroundColor: '#FFD700' },
-  addOnText: { color: 'white', fontSize: 14 },
-  addOnTextSelected: { color: 'black', fontWeight: 'bold' },
+  optionButtonTextSelected: {
+    fontWeight: '700',
+    color: '#000',
+  },
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    marginBottom: 20,
+    marginBottom: 24,
+    alignSelf: 'center',
   },
   quantityButton: {
-    backgroundColor: 'white',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
   },
-  quantityButtonText: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  quantityText: { fontSize: 24, fontWeight: 'bold', color: 'white' },
+  quantityButtonText: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#333',
+  },
+  quantityText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#111',
+    minWidth: 40,
+    textAlign: 'center',
+  },
   notesInput: {
-    backgroundColor: 'white',
-    height: 60,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 20,
-    textAlignVertical: 'top',
-    fontSize: 16,
-    color: 'black',
-  },
-  placeOrderButton: {
-    backgroundColor: '#FFD700',
-    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    minHeight: 80,
     borderRadius: 12,
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 20,
-    left: '10%',
-    right: '10%',
-    zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    fontSize: 16,
+    color: '#333',
+    textAlignVertical: 'top',
   },
-  placeOrderButtonText: { color: 'black', fontSize: 18, fontWeight: 'bold' },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#EAEAEA',
+  },
+  priceContainer: {
+    flex: 1,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  priceValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111',
+  },
+  addToCartButton: {
+    backgroundColor: '#E53935',
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    elevation: 3,
+  },
+  addToCartButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
