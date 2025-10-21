@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Image, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { View, Image, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+
+import './firebase'; // ✅ ADD THIS LINE - This initializes Firebase when the app starts.
+
 import MenuScreen from './MenuScreen';
 import OrderScreen from './OrderScreen';
 import OrderReviewScreen from './OrderReviewScreen';
 import { COLORS, SIZES, FONTS } from './styles';
 
-// Import your images
-// ✅ FINAL FIX: Changed the file extension from .jpg to .png to match your folder
 const logo = require('./assets/logos/logo-black.png'); 
 const featuredDrinks = [
   { name: 'Mango Cheesecake', image: require('./assets/images/mango-cheesecake.png') },
@@ -20,6 +22,34 @@ const featuredDrinks = [
 const Stack = createStackNavigator();
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (userCredential) => {
+      if (userCredential) {
+        setUser(userCredential);
+      } else {
+        signInAnonymously(auth).catch((error) => {
+          console.error("Anonymous sign-in error:", error);
+        });
+      }
+      setLoading(false);
+    });
+    
+    return unsubscribe;
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 10 }}>Connecting to Tiger Mango...</Text>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator 

@@ -1,164 +1,174 @@
-import React, { useState, useEffect } from "react";
-import { View, Image, Text, TouchableOpacity, StyleSheet, StatusBar, FlatList, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { doc, updateDoc, increment, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { COLORS, FONTS, globalStyles } from './styles';
 import { db } from "./firebase";
-import { Feather } from '@expo/vector-icons'; // ✅ Use the correct, built-in icon library
-import { COLORS, SIZES, FONTS, globalStyles } from './styles';
+import { collection, doc, runTransaction, addDoc, serverTimestamp } from "firebase/firestore";
 
-// ... (keep the `drinks` and `firebaseAddonKeys` constants)
-const drinks = {
-  "Mango Cheesecake": require("./assets/images/mango-cheesecake.png"),
-  "Mango Ice Cream": require("./assets/images/mango-ice-cream.png"),
-  "Mango Strawberry": require("./assets/images/mango-strawberry.png"),
-  "Tiger Combo": require("./assets/images/tiger-combo.png"),
-  "Mango Chocolate": require("./assets/images/mango-chocolate.png"),
-  "Mango Banana": require("./assets/images/mango-banana.png"),
-  "Mango Cashews": require("./assets/images/mango-cashews.png"),
-  "Mango Chips": require("./assets/images/mango-chips.png"),
-  "Mango Graham": require("./assets/images/mango-graham.png"),
-};
-const firebaseAddonKeys = {
-  "Pearl": "pearl", "Crushed Grahams": "crushed-grahams", "Oreo Crumble": "oreo-crumble",
-  "Oreo Grahams": "oreo-grahams", "Strawberry Syrup": "strawberry-syrup",
-  "Chocolate Syrup": "chocolate-syrup", "Sliced Mango": "sliced-mango", "Ice Cream": "ice-cream",
-};
+export default function OrderReviewScreen({ navigation, route }) {
+    const { items } = route.params;
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-export default function OrderReviewScreen({ route, navigation }) {
-  const { items: initialItems } = route.params || {};
-  const [items, setItems] = useState(initialItems || []);
+    const totalOrderPrice = items.reduce((total, item) => total + item.price, 0);
 
-  useEffect(() => {
-    if (route.params?.items) {
-      setItems(route.params.items);
-    }
-  }, [route.params?.items]);
+    const handleConfirmOrder = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
-  const calculateTotal = () => {
-    return items.reduce((total, item) => total + item.price, 0);
-  };
+        try {
+            // ✅ RESTRUCTURED TRANSACTION: All reads are now before all writes.
+            await runTransaction(db, async (transaction) => {
+                // --- 1. READ ALL DOCUMENTS FIRST ---
+                const cupRef = doc(db, 'inventory', 'cups');
+                const strawRef = doc(db, 'inventory', 'straw');
+                const addOnsRef = doc(db, 'inventory', 'add-ons');
 
-  const handleDelete = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
+                const [cupDoc, strawDoc, addOnsDoc] = await Promise.all([
+                    transaction.get(cupRef),
+                    transaction.get(strawRef),
+                    transaction.get(addOnsRef)
+                ]);
 
-  const handleProceed = async () => {
-    if (items.length === 0) {
-      Alert.alert("Empty Cart", "Please add items to your order before proceeding.");
-      return;
-    }
+                if (!cupDoc.exists()) throw new Error("Cup inventory document not found!");
+                if (!strawDoc.exists()) throw new Error("Straw inventory document not found!");
+                if (!addOnsDoc.exists()) throw new Error("Add-ons inventory document not found!");
 
-    try {
-      const addonsSnap = await getDoc(doc(db, "inventory", "add-ons"));
-      const currentAddons = addonsSnap.data();
+                const cupData = cupDoc.data();
+                const strawData = strawDoc.data();
+                const addOnsData = addOnsDoc.data();
 
-      for (let item of items) {
-        if (item.addOns && item.addOns.length > 0) {
-          for (let addOn of item.addOns) {
-            const dbKey = firebaseAddonKeys[addOn];
-            if (dbKey && (currentAddons[dbKey] || 0) < item.quantity) {
-              Alert.alert("Out of Stock", `Sorry, we don't have enough ${addOn} for your order.`);
-              return;
+                // --- 2. VALIDATE AND PREPARE WRITES ---
+                for (const item of items) {
+                    const { quantity, size, addOns } = item;
+                    
+                    // Validate cups
+                    const cupKey = size === '1LITER' ? 'liter' : size.toLowerCase();
+                    const currentCupStock = cupData[cupKey] || 0;
+                    if (currentCupStock < quantity) {
+                        throw new Error(`Not enough ${size} cups in stock.`);
+                    }
+                    
+                    // Validate straws
+                    const currentStrawStock = strawData.regular || 0;
+                    if (currentStrawStock < quantity) {
+                        throw new Error("Not enough straws in stock.");
+                    }
+
+                    // Validate add-ons
+                    if (addOns && addOns.length > 0) {
+                        for (const addonName of addOns) {
+                            const addonKey = addonName.toLowerCase().replace(/ /g, '-');
+                            const currentAddonStock = addOnsData[addonKey] || 0;
+                            if (currentAddonStock < quantity) {
+                                throw new Error(`Not enough ${addonName} in stock.`);
+                            }
+                        }
+                    }
+                }
+
+                // --- 3. PERFORM ALL WRITES ---
+                for (const item of items) {
+                    const { quantity, size, addOns } = item;
+
+                    // Update cups
+                    const cupKey = size === '1LITER' ? 'liter' : size.toLowerCase();
+                    transaction.update(cupRef, { [cupKey]: (cupData[cupKey] || 0) - quantity });
+
+                    // Update straws
+                    transaction.update(strawRef, { 'regular': (strawData.regular || 0) - quantity });
+
+                    // Update add-ons
+                    if (addOns && addOns.length > 0) {
+                        for (const addonName of addOns) {
+                            const addonKey = addonName.toLowerCase().replace(/ /g, '-');
+                            transaction.update(addOnsRef, { [addonKey]: (addOnsData[addonKey] || 0) - quantity });
+                        }
+                    }
+                }
+            });
+
+            // If the transaction succeeds, add each item as a separate order document
+            for (const item of items) {
+                const orderDetails = {
+                    ...item,
+                    createdAt: serverTimestamp(),
+                };
+                await addDoc(collection(db, 'orders'), orderDetails);
             }
-          }
+
+            Alert.alert('Order Confirmed', 'Your order has been placed successfully!');
+            navigation.navigate('Menu');
+
+        } catch (error) {
+            console.error("Failed to place order:", error);
+            Alert.alert('Order Failed', error.message || 'An unexpected error occurred.');
+        } finally {
+            setIsSubmitting(false);
         }
-      }
+    };
 
-      for (let item of items) {
-        const cupField = item.size === "1LITER" ? "liter" : (item.size === "GRANDE" ? "grande" : "tall");
-        const strawField = item.size === "1LITER" ? "big" : "regular";
+    return (
+        <SafeAreaView style={globalStyles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Feather name="arrow-left" size={24} color={COLORS.text} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Review Your Order</Text>
+            </View>
 
-        await updateDoc(doc(db, "inventory", "cups"), { [cupField]: increment(-item.quantity) });
-        await updateDoc(doc(db, "inventory", "straw"), { [strawField]: increment(-item.quantity) });
+            <ScrollView contentContainerStyle={styles.listContainer}>
+                {items.map((item) => (
+                    <View key={item.id} style={styles.itemCard}>
+                        <View style={styles.itemDetails}>
+                            <Text style={styles.itemFlavor}>{item.quantity}x {item.flavor}</Text>
+                            <Text style={styles.itemSize}>{item.size}</Text>
+                            {item.addOns.length > 0 && (
+                                <Text style={styles.itemAddOns}>
+                                    Add-ons: {item.addOns.join(', ')}
+                                </Text>
+                            )}
+                        </View>
+                        <Text style={styles.itemPrice}>₱{item.price}</Text>
+                    </View>
+                ))}
+            </ScrollView>
 
-        if (item.addOns && item.addOns.length > 0) {
-          for (let addOn of item.addOns) {
-            const dbKey = firebaseAddonKeys[addOn];
-            if (dbKey) await updateDoc(doc(db, "inventory", "add-ons"), { [dbKey]: increment(-item.quantity) });
-          }
-        }
-
-        await addDoc(collection(db, "orders"), {
-          flavor: item.flavor, size: item.size, addOns: item.addOns,
-          quantity: item.quantity, price: item.price, notes: item.notes || "",
-          createdAt: serverTimestamp(),
-        });
-      }
-
-      Alert.alert("Success!", "Your order has been placed.");
-      navigation.navigate("Home");
-    } catch (error) {
-      console.error("Firestore update error:", error);
-      Alert.alert("Error", "Something went wrong while placing your order.");
-    }
-  };
-
-  const renderItem = ({ item }) => (
-    <View style={styles.orderItem}>
-      <Image source={drinks[item.flavor]} style={styles.drinkImage} />
-      <View style={styles.itemDetails}>
-        <Text style={styles.flavorText}>{item.flavor}</Text>
-        <Text style={styles.detailText}>Size: {item.size} • Qty: {item.quantity}</Text>
-        {item.addOns.length > 0 && <Text style={styles.detailText}>Add-ons: {item.addOns.join(", ")}</Text>}
-      </View>
-      <View style={{alignItems: 'flex-end'}}>
-        <Text style={styles.priceText}>₱{item.price}</Text>
-        <TouchableOpacity onPress={() => handleDelete(item.id)}>
-          <Text style={styles.deleteText}>Remove</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  return (
-    <SafeAreaView style={globalStyles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-             {/* ✅ Use the correct icon component */}
-            <Feather name="arrow-left" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Your Order</Text>
-      </View>
-      <FlatList
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ paddingHorizontal: SIZES.padding }}
-        ListEmptyComponent={<Text style={styles.emptyText}>Your cart is empty.</Text>}
-      />
-      <View style={styles.footer}>
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Total</Text>
-          <Text style={styles.priceValue}>₱{calculateTotal()}</Text>
-        </View>
-        <TouchableOpacity style={styles.proceedButton} onPress={handleProceed}>
-          <Text style={styles.proceedButtonText}>Place Order Now</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
+            <View style={styles.footer}>
+                <View style={styles.priceContainer}>
+                    <Text style={styles.priceLabel}>Total Price</Text>
+                    <Text style={styles.priceValue}>₱{totalOrderPrice}</Text>
+                </View>
+                <TouchableOpacity 
+                    style={[styles.confirmButton, isSubmitting && styles.confirmButtonDisabled]} 
+                    onPress={handleConfirmOrder}
+                    disabled={isSubmitting}
+                >
+                    <Text style={styles.confirmButtonText}>
+                        {isSubmitting ? 'Placing Order...' : 'Confirm Order'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  header: { padding: SIZES.padding, alignItems: 'center', flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.gray },
-  backButton: { position: 'absolute', left: SIZES.padding, zIndex: 1 },
-  title: { ...FONTS.h2, textAlign: 'center', flex: 1 },
-  emptyText: { ...FONTS.body, color: COLORS.darkGray, textAlign: 'center', marginTop: 50 },
-  orderItem: {
-    flexDirection: "row", backgroundColor: COLORS.white, borderRadius: 16, padding: 15,
-    marginBottom: 15, alignItems: "center",
-  },
-  drinkImage: { width: 60, height: 60, borderRadius: 8, marginRight: 15 },
-  itemDetails: { flex: 1 },
-  flavorText: { ...FONTS.h3, fontSize: 18, marginBottom: 4 },
-  detailText: { ...FONTS.body, color: COLORS.darkGray, fontSize: 14 },
-  priceText: { ...FONTS.h3, color: COLORS.primary },
-  deleteText: { ...FONTS.body, color: COLORS.primary, fontSize: 14, marginTop: 4 },
-  footer: { padding: SIZES.padding, borderTopWidth: 1, borderTopColor: COLORS.gray, backgroundColor: COLORS.white },
-  priceContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  priceLabel: { ...FONTS.body, color: COLORS.darkGray },
-  priceValue: { ...FONTS.h2 },
-  proceedButton: { backgroundColor: COLORS.primary, padding: 20, borderRadius: 30, alignItems: 'center' },
-  proceedButtonText: { ...FONTS.h3, color: COLORS.white, fontSize: 18 },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 },
+    backButton: { marginRight: 20 },
+    headerTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.text },
+    listContainer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 150 },
+    itemCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 15, borderRadius: 10, marginBottom: 10, elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5 },
+    itemDetails: { flex: 1 },
+    itemFlavor: { fontSize: 18, fontWeight: '600', color: '#111' },
+    itemSize: { fontSize: 14, color: '#555', marginTop: 4 },
+    itemAddOns: { fontSize: 14, color: '#555', marginTop: 4, fontStyle: 'italic' },
+    itemPrice: { fontSize: 18, fontWeight: 'bold', color: '#111' },
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingVertical: 15, paddingHorizontal: 20, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#EAEAEA' },
+    priceContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+    priceLabel: { fontSize: 16, color: '#666' },
+    priceValue: { fontSize: 26, fontWeight: 'bold', color: '#111' },
+    confirmButton: { backgroundColor: '#E53935', paddingVertical: 18, borderRadius: 30, alignItems: 'center', elevation: 3 },
+    confirmButtonDisabled: { backgroundColor: '#BDBDBD' },
+    confirmButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
 });
