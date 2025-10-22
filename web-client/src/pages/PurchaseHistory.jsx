@@ -18,13 +18,37 @@ export default function PurchaseHistory() {
     return () => unsub();
   }, []);
 
-  // ... (keep filtering logic)
+  // Filter orders based on the selected date range
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : null;
+      if (!orderDate) return false; // Skip if date is invalid
+
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+
+      // Adjust start date to the beginning of the day
+      if (start) {
+        start.setHours(0, 0, 0, 0);
+      }
+      // Adjust end date to the end of the day
+      if (end) {
+        end.setHours(23, 59, 59, 999);
+      }
+
+      const isAfterStart = start ? orderDate >= start : true;
+      const isBeforeEnd = end ? orderDate <= end : true;
+
+      return isAfterStart && isBeforeEnd;
+    });
+  }, [orders, startDate, endDate]);
+
 
   return (
     <div>
       <div className="page-header"><FiShoppingCart /><h2>Purchase History</h2></div>
       <div className="page-header-underline"></div>
-      
+
       <div className="filter-bar">
         <div className="filter-group">
           <FiCalendar />
@@ -52,12 +76,28 @@ export default function PurchaseHistory() {
           <tbody>
             {loading ? (
                 <tr><td colSpan="3" className="no-data">Loading...</td></tr>
-            ) : orders.map((order) => {
+            ) : filteredOrders.length === 0 ? (
+                 <tr><td colSpan="3" className="no-data">No orders found for the selected date range.</td></tr>
+            ) : filteredOrders.map((order) => {
               const d = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
-              // ✅ This logic now handles BOTH old (single item) and new (multi-item) order formats
-              const itemsToDisplay = order.items ? 
-                order.items.map(item => `${item.quantity}x ${item.flavor} (${item.size})`).join(', ') :
-                `${order.quantity || 1}x ${order.flavor} (${order.size})`; // Fallback for old format
+              // ✅ Updated logic to include add-ons in the display string
+              const itemsToDisplay = order.items ?
+                order.items.map(item => {
+                  let addonsString = "";
+                  if (item.addOns && item.addOns.length > 0) {
+                     // Check if addOns is defined and not empty
+                    addonsString = ` (+ ${item.addOns.join(', ')})`;
+                  }
+                  return `${item.quantity}x ${item.flavor} (${item.size})${addonsString}`;
+                }).join(', ') :
+                (() => { // Fallback for old format (single item)
+                    let addonsString = "";
+                    if (order.addOns && order.addOns.length > 0) {
+                         // Check if addOns is defined and not empty
+                        addonsString = ` (+ ${order.addOns.join(', ')})`;
+                    }
+                    return `${order.quantity || 1}x ${order.flavor} (${order.size})${addonsString}`;
+                })();
               const priceToDisplay = order.totalPrice !== undefined ? order.totalPrice : order.price;
 
               return (
