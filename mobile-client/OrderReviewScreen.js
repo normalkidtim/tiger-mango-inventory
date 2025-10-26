@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { COLORS, FONTS, globalStyles } from './styles';
 import { db } from "./firebase";
-import { collection, doc, runTransaction, addDoc, serverTimestamp } from "firebase/firestore";
+// We only need collection, addDoc, and serverTimestamp
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"; 
 
 export default function OrderReviewScreen({ navigation, route }) {
     const { items } = route.params;
@@ -17,85 +18,18 @@ export default function OrderReviewScreen({ navigation, route }) {
         setIsSubmitting(true);
 
         try {
-            // ✅ RESTRUCTURED TRANSACTION: All reads are now before all writes.
-            await runTransaction(db, async (transaction) => {
-                // --- 1. READ ALL DOCUMENTS FIRST ---
-                const cupRef = doc(db, 'inventory', 'cups');
-                const strawRef = doc(db, 'inventory', 'straw');
-                const addOnsRef = doc(db, 'inventory', 'add-ons');
-
-                const [cupDoc, strawDoc, addOnsDoc] = await Promise.all([
-                    transaction.get(cupRef),
-                    transaction.get(strawRef),
-                    transaction.get(addOnsRef)
-                ]);
-
-                if (!cupDoc.exists()) throw new Error("Cup inventory document not found!");
-                if (!strawDoc.exists()) throw new Error("Straw inventory document not found!");
-                if (!addOnsDoc.exists()) throw new Error("Add-ons inventory document not found!");
-
-                const cupData = cupDoc.data();
-                const strawData = strawDoc.data();
-                const addOnsData = addOnsDoc.data();
-
-                // --- 2. VALIDATE AND PREPARE WRITES ---
-                for (const item of items) {
-                    const { quantity, size, addOns } = item;
-                    
-                    // Validate cups
-                    const cupKey = size === '1LITER' ? 'liter' : size.toLowerCase();
-                    const currentCupStock = cupData[cupKey] || 0;
-                    if (currentCupStock < quantity) {
-                        throw new Error(`Not enough ${size} cups in stock.`);
-                    }
-                    
-                    // Validate straws
-                    const currentStrawStock = strawData.regular || 0;
-                    if (currentStrawStock < quantity) {
-                        throw new Error("Not enough straws in stock.");
-                    }
-
-                    // Validate add-ons
-                    if (addOns && addOns.length > 0) {
-                        for (const addonName of addOns) {
-                            const addonKey = addonName.toLowerCase().replace(/ /g, '-');
-                            const currentAddonStock = addOnsData[addonKey] || 0;
-                            if (currentAddonStock < quantity) {
-                                throw new Error(`Not enough ${addonName} in stock.`);
-                            }
-                        }
-                    }
-                }
-
-                // --- 3. PERFORM ALL WRITES ---
-                for (const item of items) {
-                    const { quantity, size, addOns } = item;
-
-                    // Update cups
-                    const cupKey = size === '1LITER' ? 'liter' : size.toLowerCase();
-                    transaction.update(cupRef, { [cupKey]: (cupData[cupKey] || 0) - quantity });
-
-                    // Update straws
-                    transaction.update(strawRef, { 'regular': (strawData.regular || 0) - quantity });
-
-                    // Update add-ons
-                    if (addOns && addOns.length > 0) {
-                        for (const addonName of addOns) {
-                            const addonKey = addonName.toLowerCase().replace(/ /g, '-');
-                            transaction.update(addOnsRef, { [addonKey]: (addOnsData[addonKey] || 0) - quantity });
-                        }
-                    }
-                }
-            });
-
-            // If the transaction succeeds, add each item as a separate order document
-            for (const item of items) {
-                const orderDetails = {
-                    ...item,
-                    createdAt: serverTimestamp(),
-                };
-                await addDoc(collection(db, 'orders'), orderDetails);
-            }
+            // All inventory transaction logic has been REMOVED from this function.
+            // We are only creating the new order document.
+            
+            const newOrder = {
+                items: items, 
+                totalPrice: totalOrderPrice,
+                createdAt: serverTimestamp(),
+                status: 'Pending' // Set status to 'Pending'
+            };
+            
+            // Add the single order document to the 'orders' collection
+            await addDoc(collection(db, 'orders'), newOrder);
 
             Alert.alert('Order Confirmed', 'Your order has been placed successfully!');
             navigation.navigate('Menu');
