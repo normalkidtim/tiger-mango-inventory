@@ -1,7 +1,6 @@
 import React from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-// FiUserPlus added for the new page
 import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit, FiBarChart2, FiUsers, FiUserPlus } from "react-icons/fi"; 
 
 export default function Layout() {
@@ -18,7 +17,7 @@ export default function Layout() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo-circle"></div>
-          <h2 className="sidebar-title">Tiger Mango</h2>
+          <h2 className="sidebar-title">Tealicieux</h2>
         </div>
         <nav className="sidebar-nav">
           <NavLink to="/" className="sidebar-link"><FiGrid /> Inventory</NavLink>
@@ -33,7 +32,6 @@ export default function Layout() {
           {currentUser?.role === 'admin' && (
             <>
               <NavLink to="/admin-panel" className="sidebar-link"><FiUsers /> Admin Panel</NavLink>
-              {/* NEW: Create User Link */}
               <NavLink to="/create-user" className="sidebar-link"><FiUserPlus /> Create User</NavLink>
             </>
           )}

@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 export const COLORS = {
-  primary: '#E53935', // Brand Red
+  primary: '#E53935', // Tealicieux Primary Brand Color
   accent: '#FFD700',   // Gold/Yellow
   white: '#FFFFFF',
   lightGray: '#F4F5F7',

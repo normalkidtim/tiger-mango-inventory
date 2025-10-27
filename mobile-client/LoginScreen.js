@@ -27,12 +27,7 @@ const LoginScreen = () => {
     }
     setLoading(true);
     try {
-      // Note: This relies on the AuthContext logic in the web client 
-      // which assumes the user role must be 'admin' for web access.
-      // Here, we allow ANY valid user (employee, manager, admin) to log into the mobile client.
       await signInWithEmailAndPassword(auth, email, password);
-      
-      // The onAuthStateChanged listener in app.js will handle setting the user and navigating away.
     } catch (error) {
       console.error("Login failed:", error.message);
       Alert.alert("Login Failed", "Invalid email or password. Please try again.");
@@ -44,8 +39,8 @@ const LoginScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.header}>Tiger Mango POS</Text>
-        <Text style={styles.subHeader}>Staff Login Required</Text>
+        <Text style={styles.header}>Tealicieux</Text>
+        <Text style={styles.subHeader}>Login using the cashier account</Text>
 
         <TextInput
           style={styles.input}
@@ -79,7 +74,7 @@ const LoginScreen = () => {
 
         <View style={styles.noticeContainer}>
             <Text style={styles.noticeText}>
-                * All staff roles (Employee, Manager, Admin) can access the POS app.
+                
             </Text>
         </View>
       </View>

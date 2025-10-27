@@ -4,7 +4,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth'; 
-// NEW IMPORTS: For fetching user profile
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 import './firebase'; 
@@ -34,12 +33,11 @@ async function fetchUserProfile(user) {
             role: userData.role
         };
     } 
-    return null; // Profile doesn't exist
+    return null; 
 }
 
 export default function App() {
   const [user, setUser] = useState(null);
-  // NEW: State for the detailed user profile (including name/role)
   const [userProfile, setUserProfile] = useState(null); 
   const [loading, setLoading] = useState(true);
 
@@ -48,14 +46,11 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (userCredential) => {
       
       if (userCredential) {
-        // If an Auth user is present, fetch their complete profile
         const profile = await fetchUserProfile(userCredential);
         
         if (profile) {
-            // User is authenticated and has a valid Firestore profile
             setUserProfile(profile);
         } else {
-            // User authenticated but profile deleted by admin -> force logout
             console.warn("Mobile: User authenticated but profile not found. Logging out.");
             await auth.signOut();
             setUserProfile(null);
@@ -79,12 +74,10 @@ export default function App() {
     );
   }
   
-  // RENDER LOGIN: If userProfile is null, show the login screen.
   if (!userProfile) {
     return <LoginScreen />;
   }
 
-  // RENDER MAIN APP: Pass the userProfile data to MainScreen
   return (
     <NavigationContainer>
       <MenuProvider>
@@ -99,9 +92,8 @@ export default function App() {
         >
           <Stack.Screen 
             name="Main" 
-            // Pass the userProfile object to MainScreen
             children={(props) => <MainScreen {...props} userProfile={userProfile} />} 
-            options={{ title: 'Tiger Mango POS', headerTitleAlign: 'center' }}
+            options={{ title: '', headerTitleAlign: 'center' }}
           />
           <Stack.Screen 
             name="TakeOrder" 

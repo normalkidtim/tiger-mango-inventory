@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ Import useNavigate
+import { useNavigate } from 'react-router-dom'; 
 import { useAuth } from './AuthContext';
 
 export default function Login() {
@@ -9,7 +9,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   
   const { login } = useAuth();
-  const navigate = useNavigate(); // ✅ Initialize the navigate function
+  const navigate = useNavigate(); 
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -17,7 +17,6 @@ export default function Login() {
       setError('');
       setLoading(true);
       await login(email, password);
-      // ✅ On success, navigate to the homepage
       navigate('/'); 
     } catch (err) {
       setError('Failed to log in. Please check your email and password.');
@@ -29,7 +28,7 @@ export default function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2 className="auth-title">Tiger Mango Web Client</h2>
+        <h2 className="auth-title">Tealicieux Web Client</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
