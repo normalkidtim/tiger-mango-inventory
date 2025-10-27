@@ -15,8 +15,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
   const availableSizes = Object.keys(product.prices);
   
   const [selectedSize, setSelectedSize] = useState(availableSizes[0]);
-  const [selectedSugar, setSelectedSugar] = useState(menuData.options.sugar[1]);
-  const [selectedIce, setSelectedIce] = useState(menuData.options.ice[0]);
+  // REMOVED: selectedSugar, setSelectedSugar
+  // REMOVED: selectedIce, setSelectedIce
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [quantity, setQuantity] = useState(1); // Quantity is fixed at 1 for now
 
@@ -40,8 +40,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
       name: product.name,
       categoryName: product.categoryName || 'Uncategorized',
       size: selectedSize,
-      sugar: selectedSugar,
-      ice: selectedIce,
+      // REMOVED: sugar: selectedSugar,
+      // REMOVED: ice: selectedIce,
       addons: selectedAddons,
       quantity: quantity,
       basePrice: product.prices[selectedSize],
@@ -67,6 +67,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
           </View>
           
           <ScrollView style={styles.modalBody}>
+            {/* Size Selector */}
             {availableSizes.length > 1 && (
               <View style={styles.modalGroup}>
                 <Text style={styles.modalGroupTitle}>Size</Text>
@@ -92,48 +93,11 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
               </View>
             )}
 
-            <View style={styles.modalGroup}>
-              <Text style={styles.modalGroupTitle}>Sugar Level</Text>
-              <View style={styles.modalOptionsGrid}>
-                {menuData.options.sugar.map((sugar) => (
-                  <TouchableOpacity
-                    key={sugar}
-                    style={[
-                      styles.modalOptionBtn, 
-                      styles.modalOptionBtnSingle,
-                      selectedSugar === sugar && styles.modalOptionBtnActive
-                    ]}
-                    onPress={() => setSelectedSugar(sugar)}
-                  >
-                    <Text style={[styles.modalOptionText, selectedSugar === sugar && styles.modalOptionTextActive]}>
-                      {sugar}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            {/* REMOVED: Sugar Level Selector */}
 
-            <View style={styles.modalGroup}>
-              <Text style={styles.modalGroupTitle}>Ice Level</Text>
-              <View style={[styles.modalOptionsGrid, styles.columns3]}>
-                {menuData.options.ice.map((ice) => (
-                  <TouchableOpacity
-                    key={ice}
-                    style={[
-                      styles.modalOptionBtn, 
-                      styles.modalOptionBtnSingle,
-                      selectedIce === ice && styles.modalOptionBtnActive
-                    ]}
-                    onPress={() => setSelectedIce(ice)}
-                  >
-                    <Text style={[styles.modalOptionText, selectedIce === ice && styles.modalOptionTextActive]}>
-                      {ice}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            {/* REMOVED: Ice Level Selector */}
 
+            {/* Add-ons Selector */}
             <View style={styles.modalGroup}>
               <Text style={styles.modalGroupTitle}>Add-ons</Text>
               <View style={styles.modalOptionsGrid}>

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { db } from './firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
 
 import { menuData } from './menuData';
 import ProductModal from './ProductModal';
@@ -20,6 +21,7 @@ import ProductModal from './ProductModal';
 const formatPrice = (price) => `₱${price.toFixed(2)}`;
 
 const POSScreen = () => {
+  const navigation = useNavigation();
   const [activeCategory, setActiveCategory] = useState(menuData.categories[0].id);
   const [cart, setCart] = useState([]);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -73,7 +75,7 @@ const POSScreen = () => {
 
     try {
       const newOrder = {
-        items: cart, 
+        items: cart.map(({ cartId, ...rest }) => rest), // Remove cartId before saving to DB
         totalPrice: cartTotal,
         createdAt: serverTimestamp(),
         status: 'Pending', 
@@ -81,7 +83,14 @@ const POSScreen = () => {
 
       await addDoc(collection(db, 'orders'), newOrder);
 
-      Alert.alert(`Order Placed!`, `Total: ${formatPrice(cartTotal)}`);
+      Alert.alert(
+        `Order Placed!`, 
+        `Total: ${formatPrice(cartTotal)}`,
+        [
+          { text: "View Pending Orders", onPress: () => navigation.navigate('PendingOrders') },
+          { text: "New Order", onPress: () => {} },
+        ]
+      );
       setCart([]);
       setIsCartModalOpen(false);
     } catch (error) {
@@ -146,9 +155,7 @@ const POSScreen = () => {
           {item.quantity}x {item.name} ({item.size})
         </Text>
         <Text style={styles.cartItemCategory}>{item.categoryName}</Text>
-        <Text style={styles.cartItemMods}>
-          {item.sugar}, {item.ice}
-        </Text>
+        {/* REMOVED: Sugar and Ice display from cart item */}
         {item.addons.length > 0 && (
           <Text style={styles.cartItemAddons}>
             + {item.addons.map(a => a.name).join(', ')}
@@ -420,10 +427,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#5e6c84',
   },
-  cartItemMods: {
-    fontSize: 13,
-    color: '#5e6c84',
-  },
+  // REMOVED: cartItemMods style rule
   cartItemAddons: {
     fontSize: 13,
     color: '#5e6c84',

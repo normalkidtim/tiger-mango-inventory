@@ -13,21 +13,8 @@ export const menuData = {
     { id: 'crushed-graham', name: 'Crushed Graham', price: 10.00 },
     { id: 'coffee-shot', name: 'Coffee Shot', price: 10.00 },
   ],
-  // Options that don't change the price
-  options: {
-    sugar: [
-      '100% Full Sugar',
-      '75% Normal',
-      '50% Half Sugar',
-      '25% Less Sugar',
-      '0% Zero Sugar',
-    ],
-    ice: [
-      'Normal Ice',
-      'Less Ice',
-      'No Ice'
-    ],
-  },
+  // Options that don't change the price - REMOVED
+  
   // All your product categories
   categories: [
     {
