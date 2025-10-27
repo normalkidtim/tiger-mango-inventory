@@ -15,10 +15,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
   const availableSizes = Object.keys(product.prices);
   
   const [selectedSize, setSelectedSize] = useState(availableSizes[0]);
-  // REMOVED: selectedSugar, setSelectedSugar
-  // REMOVED: selectedIce, setSelectedIce
   const [selectedAddons, setSelectedAddons] = useState([]);
-  const [quantity, setQuantity] = useState(1); // Quantity is fixed at 1 for now
+  const [quantity, setQuantity] = useState(1); 
 
   const finalPrice = useMemo(() => {
     const basePrice = product.prices[selectedSize];
@@ -34,6 +32,16 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
     );
   };
 
+  // ✅ New logic for quantity controls
+  const handleIncreaseQuantity = () => {
+    setQuantity(prev => prev + 1);
+  };
+
+  const handleDecreaseQuantity = () => {
+    setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+  };
+  // END new logic
+
   const handleSubmit = () => {
     const customizedProduct = {
       id: product.id,
@@ -47,6 +55,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
       basePrice: product.prices[selectedSize],
       finalPrice: finalPrice,
     };
+    onClose(); 
     onAddToCart(customizedProduct);
   };
 
@@ -93,10 +102,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
               </View>
             )}
 
-            {/* REMOVED: Sugar Level Selector */}
-
-            {/* REMOVED: Ice Level Selector */}
-
             {/* Add-ons Selector */}
             <View style={styles.modalGroup}>
               <Text style={styles.modalGroupTitle}>Add-ons</Text>
@@ -123,10 +128,34 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
                 })}
               </View>
             </View>
+            
+            {/* ✅ New: Quantity Selector */}
+            <View style={styles.modalGroup}>
+              <Text style={styles.modalGroupTitle}>Quantity</Text>
+              <View style={styles.quantityControl}>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={handleDecreaseQuantity}
+                  disabled={quantity === 1}
+                >
+                  <Text style={styles.quantityButtonText}>-</Text>
+                </TouchableOpacity>
+                <View style={styles.quantityDisplay}>
+                  <Text style={styles.quantityText}>{quantity}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={handleIncreaseQuantity}
+                >
+                  <Text style={styles.quantityButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {/* End New: Quantity Selector */}
+
           </ScrollView>
 
           <View style={styles.modalFooter}>
-            {/* Quantity controls could go here */}
             <TouchableOpacity style={styles.modalAddToCartBtn} onPress={handleSubmit}>
               <Text style={styles.modalAddToCartText}>Add {quantity} to Cart</Text>
               <Text style={styles.modalAddToCartPrice}>{formatPrice(finalPrice)}</Text>
@@ -256,7 +285,42 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-  }
+  },
+  // ✅ New Quantity Control Styles
+  quantityControl: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityButton: {
+    backgroundColor: '#0052cc',
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+    marginHorizontal: 10,
+  },
+  quantityButtonText: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  quantityDisplay: {
+    width: 60,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f4f5f7',
+    borderWidth: 1,
+    borderColor: '#dfe1e6',
+    borderRadius: 6,
+  },
+  quantityText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#172b4d',
+  },
 });
 
 export default ProductModal;
