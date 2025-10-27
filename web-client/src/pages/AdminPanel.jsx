@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions'; 
 import { db } from '../firebase';
 import { useAuth } from '../AuthContext';
 import { FiUsers, FiEdit, FiSave, FiAlertCircle, FiUser, FiMail, FiPhone, FiTrash2, FiKey } from 'react-icons/fi';
@@ -12,37 +13,21 @@ import '../assets/styles/admin.css';
 const getDisplayName = (key) => key.charAt(0).toUpperCase() + key.slice(1);
 const ROLES = ['employee', 'manager', 'admin'];
 
+// Initialize Firebase Functions (needed for Admin Password Reset *if* enabled)
+const functions = getFunctions();
+const resetPasswordCallable = httpsCallable(functions, 'adminResetPassword');
+
+
 // Component for a single User Card with Edit functionality
-function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChange, onDelete, isEditing, onPasswordChange }) {
+// NOTE: onPasswordChange prop is no longer needed but kept for cleanliness in refactor
+function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChange, onDelete, isEditing }) {
     const isCurrentUser = user.uid === currentUser.uid;
     const { id, email } = user;
     
-    // Additional state for password change in edit mode
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [passwordError, setPasswordError] = useState('');
-
     const cardClass = `user-card active`; 
 
-    const handlePasswordUpdate = () => {
-        if (!newPassword || newPassword.length < 6) {
-            setPasswordError('Password must be at least 6 characters long.');
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setPasswordError('Passwords do not match.');
-            return;
-        }
-        setPasswordError('');
-        onPasswordChange(user, newPassword);
-        setNewPassword('');
-        setConfirmPassword('');
-    };
-
+    // The handlePasswordUpdate logic and password states are REMOVED entirely.
     const handleCancel = (userId) => {
-        setNewPassword('');
-        setConfirmPassword('');
-        setPasswordError('');
         onCancelEdit(userId);
     }
 
@@ -100,37 +85,8 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
                             </select>
                         </div>
                         
-                        {/* NEW: Change Password Section */}
-                        <div className="password-change-section">
-                            <h4><FiKey size={14} /> Change Password</h4>
-                            {passwordError && <div className="error-message-small">{passwordError}</div>}
-                            <div className="form-group-item">
-                                <label>New Password (min 6 chars)</label>
-                                <input
-                                    type="password"
-                                    className="input-field"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                />
-                            </div>
-                            <div className="form-group-item">
-                                <label>Confirm Password</label>
-                                <input
-                                    type="password"
-                                    className="input-field"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                />
-                            </div>
-                            <button 
-                                onClick={handlePasswordUpdate}
-                                className="btn-add-action btn-password"
-                                disabled={!newPassword.trim() || !confirmPassword.trim()}
-                            >
-                                Update Password
-                            </button>
-                        </div>
-
+                        {/* REMOVED: Change Password Section */}
+                        {/* If you wish to re-add this later when backend is ready, restore the code block here. */}
                     </>
                 ) : (
                     // Read-only display mode
@@ -184,201 +140,204 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
 
 
 export default function AdminPanel() {
-  const [users, setUsers] = useState([]);
-  const [usersDraft, setUsersDraft] = useState({}); 
-  const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState('');
-  
-  const { currentUser } = useAuth(); 
-  const isAdmin = currentUser?.role === 'admin';
-
-  // 1. Fetch data
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    const q = collection(db, 'users');
+    const [users, setUsers] = useState([]);
+    const [usersDraft, setUsersDraft] = useState({}); 
+    const [editingId, setEditingId] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [saveStatus, setSaveStatus] = useState('');
+    const [showSelfPassword, setShowSelfPassword] = useState(false); 
     
-    const unsub = onSnapshot(q, (snap) => {
-      const usersList = [];
-      snap.forEach((docSnap) => {
-        const userData = { id: docSnap.id, ...docSnap.data() };
-        usersList.push({ 
-            ...userData,
-            __originalRole: userData.role 
-        }); 
-      });
-      setUsers(usersList.sort((a, b) => a.lastName.localeCompare(b.lastName)));
-      setLoading(false);
-    }, (error) => {
-        console.error("Error fetching users:", error);
-        setSaveStatus('❌ Failed to load user accounts.');
+    const { currentUser, changeSelfPassword } = useAuth(); 
+    const isAdmin = currentUser?.role === 'admin';
+
+    // 1. Fetch data (Omitted for brevity)
+    useEffect(() => {
+        if (!isAdmin) return;
+
+        const q = collection(db, 'users');
+        
+        const unsub = onSnapshot(q, (snap) => {
+        const usersList = [];
+        snap.forEach((docSnap) => {
+            const userData = { id: docSnap.id, ...docSnap.data() };
+            usersList.push({ 
+                ...userData,
+                __originalRole: userData.role 
+            }); 
+        });
+        setUsers(usersList.sort((a, b) => a.lastName.localeCompare(b.lastName)));
         setLoading(false);
-    });
+        }, (error) => {
+            console.error("Error fetching users:", error);
+            setSaveStatus('❌ Failed to load user accounts.');
+            setLoading(false);
+        });
 
-    return () => unsub();
-  }, [isAdmin]);
-  
-  // 2. Handlers for Edit Mode and State Management
-  const handleStartEdit = (user) => {
-      setUsersDraft(user);
-      setEditingId(user.id);
-      setSaveStatus('');
-  };
-  
-  const handleCancelEdit = (userId) => {
-      // Revert the draft state for the canceled user (optional, but clean)
-      const originalUser = users.find(u => u.id === userId);
-      setUsersDraft(originalUser); 
-      setEditingId(null);
-  };
-  
-  const handleUserChange = (id, field, value) => {
-      setUsersDraft(prev => ({
-          ...prev,
-          [field]: value
-      }));
-  };
-
-  // 3. Core Save Profile Function
-  const handleSaveUser = async (draftUser) => {
-    if (!draftUser.firstName || !draftUser.lastName || !draftUser.role) {
-      setSaveStatus('❌ First name, last name, and role are required.');
-      setTimeout(() => setSaveStatus(''), 5000);
-      return;
-    }
+        return () => unsub();
+    }, [isAdmin]);
     
-    if (draftUser.uid === currentUser.uid && draftUser.role !== 'admin') {
-      setSaveStatus('❌ You cannot downgrade your own administrative rights.');
-      setEditingId(null);
-      setTimeout(() => setSaveStatus(''), 5000);
-      return;
-    }
+    // 2. Handlers for Edit Mode and State Management (Omitted for brevity)
+    const handleStartEdit = (user) => {
+        setUsersDraft(user);
+        setEditingId(user.id);
+        setSaveStatus('');
+    };
     
-    const changes = {
-        firstName: draftUser.firstName,
-        lastName: draftUser.lastName,
-        role: draftUser.role,
-        contactNumber: draftUser.contactNumber || '', 
+    const handleCancelEdit = (userId) => {
+        const originalUser = users.find(u => u.id === userId);
+        setUsersDraft(originalUser); 
+        setEditingId(null);
+    };
+    
+    const handleUserChange = (id, field, value) => {
+        setUsersDraft(prev => ({
+            ...prev,
+            [field]: value
+        }));
     };
 
-    try {
-        setEditingId(null);
-        await updateDoc(doc(db, 'users', draftUser.id), changes);
-
-        setSaveStatus(`✅ Profile for ${draftUser.email} updated successfully.`);
-    } catch (error) {
-        console.error("Error updating user:", error);
-        setSaveStatus(`❌ Failed to update profile for ${draftUser.email}: ${error.message}`);
-    } finally {
-        setTimeout(() => setSaveStatus(''), 5000);
-    }
-  };
-  
-  // 4. Password Change Stub (Client-side)
-  const handlePasswordChange = (user, newPassword) => {
-      // NOTE: This function only provides the UI for the password change request.
-      // Changing another user's password securely requires the Firebase Admin SDK,
-      // typically implemented in a secure Cloud Function or backend server.
-      
-      setSaveStatus(
-          `⚠️ Password for ${user.email} saved as: "${newPassword}". \n\nTHIS REQUIRES A BACKEND/CLOUD FUNCTION TO ACTUALLY BE APPLIED IN FIREBASE AUTH.`
-      );
-      setTimeout(() => setSaveStatus(''), 10000);
-  }
-
-  // 5. Delete Function
-  const handleDeleteUser = async (user) => {
-    if (user.uid === currentUser.uid) {
-        setSaveStatus('❌ You cannot delete your own account.');
-        setTimeout(() => setSaveStatus(''), 5000);
-        return;
-    }
-
-    if (!window.confirm(`WARNING: Are you absolutely sure you want to delete the profile and access for ${user.email}? \n\nNote: The login account in Firebase Auth MUST be manually deleted later by an administrator to fully block login.`)) {
-        return;
-    }
-
-    try {
-        // Delete the user's profile document. AuthContext will block their login.
-        await deleteDoc(doc(db, 'users', user.id)); 
+    // 3. Core Save Profile Function (Omitted for brevity)
+    const handleSaveUser = async (draftUser) => {
+        if (!draftUser.firstName || !draftUser.lastName || !draftUser.role) {
+            setSaveStatus('❌ First name, last name, and role are required.');
+            setTimeout(() => setSaveStatus(''), 5000);
+            return;
+        }
         
-        setSaveStatus(`🗑️ Profile deleted for ${user.email}. User can no longer access the app.`);
-    } catch (error) {
-        console.error("Error deleting user:", error);
-        setSaveStatus(`❌ Failed to delete account profile for ${user.email}: ${error.message}`);
-    } finally {
-        setTimeout(() => setSaveStatus(''), 5000);
+        if (draftUser.uid === currentUser.uid && draftUser.role !== 'admin') {
+            setSaveStatus('❌ You cannot downgrade your own administrative rights.');
+            setEditingId(null);
+            setTimeout(() => setSaveStatus(''), 5000);
+            return;
+        }
+        
+        const changes = {
+            firstName: draftUser.firstName,
+            lastName: draftUser.lastName,
+            role: draftUser.role,
+            contactNumber: draftUser.contactNumber || '', 
+        };
+
+        try {
+            setEditingId(null);
+            await updateDoc(doc(db, 'users', draftUser.id), changes);
+
+            setSaveStatus(`✅ Profile for ${draftUser.email} updated successfully.`);
+        } catch (error) {
+            console.error("Error updating user:", error);
+            setSaveStatus(`❌ Failed to update profile for ${draftUser.email}: ${error.message}`);
+        } finally {
+            setTimeout(() => setSaveStatus(''), 5000);
+        }
+    };
+    
+    // 4. Admin Change Password function is REMOVED/NO-OP
+    // The callable function logic is no longer needed here.
+
+    // 5. Delete Function (Omitted for brevity)
+    const handleDeleteUser = async (user) => {
+        if (user.uid === currentUser.uid) {
+            setSaveStatus('❌ You cannot delete your own account.');
+            setTimeout(() => setSaveStatus(''), 5000);
+            return;
+        }
+
+        if (!window.confirm(`WARNING: Are you absolutely sure you want to delete the profile and access for ${user.email}? \n\nNote: The login account in Firebase Auth MUST be manually deleted later by an administrator to fully block login.`)) {
+            return;
+        }
+
+        try {
+            await deleteDoc(doc(db, 'users', user.id)); 
+            setSaveStatus(`🗑️ Profile deleted for ${user.email}. User can no longer access the app.`);
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            setSaveStatus(`❌ Failed to delete account profile for ${user.email}: ${error.message}`);
+        } finally {
+            setTimeout(() => setSaveStatus(''), 5000);
+        }
+    };
+
+
+    if (!isAdmin) {
+        // ... (Access Denied Block)
+        return (
+            <div className="page-content-wrapper">
+                <div className="page-header"><FiUsers /><h2>Admin Panel - User Management</h2></div>
+                <div className="page-header-underline"></div>
+                <div className="error-message" style={{ marginTop: '30px', textAlign: 'center' }}>
+                    <FiAlertCircle size={24} style={{ marginBottom: '10px' }}/>
+                    <p>Access Denied. You must have Administrator privileges to view this page.</p>
+                </div>
+            </div>
+        );
     }
-  };
 
+    if (loading) {
+        // ... (Loading Block)
+        return (
+        <div>
+            <div className="page-header"><FiUsers /><h2>Admin Panel - User Accounts</h2></div>
+            <div className="page-header-underline"></div>
+            <p className="no-data">Loading user accounts...</p>
+        </div>
+        );
+    }
 
-  if (!isAdmin) {
-      // ... (Access Denied Block - No change)
-      return (
-          <div className="page-content-wrapper">
-              <div className="page-header"><FiUsers /><h2>Admin Panel - User Management</h2></div>
-              <div className="page-header-underline"></div>
-              <div className="error-message" style={{ marginTop: '30px', textAlign: 'center' }}>
-                <FiAlertCircle size={24} style={{ marginBottom: '10px' }}/>
-                <p>Access Denied. You must have Administrator privileges to view this page.</p>
-              </div>
-          </div>
-      );
-  }
-
-  if (loading) {
-    // ... (Loading Block - No change)
     return (
-      <div>
-        <div className="page-header"><FiUsers /><h2>Admin Panel - User Accounts</h2></div>
+        <div className="admin-panel-page">
+        <div className="page-header"><FiUsers /><h2>Admin Panel - User Accounts ({users.length})</h2></div>
         <div className="page-header-underline"></div>
-        <p className="no-data">Loading user accounts...</p>
-      </div>
+        
+        {saveStatus && (
+            <div className={saveStatus.startsWith('❌') ? 'error-message' : 'success-message'} style={{ padding: '10px', marginBottom: '25px' }}>
+                {saveStatus}
+            </div>
+        )}
+        
+        {/* Button to show the self-service password change form */}
+        <button 
+            onClick={() => setShowSelfPassword(true)}
+            className="btn-add-action btn-add-secondary"
+            style={{ marginBottom: '20px', maxWidth: '250px' }}
+        >
+            <FiKey /> Change My Password
+        </button>
+        
+        {/* Self-Service Password Change Form */}
+        {showSelfPassword && (
+            <SelfPasswordChangeForm
+                onChangePassword={changeSelfPassword}
+                onClose={() => setShowSelfPassword(false)}
+            />
+        )}
+
+
+        {/* --- User List (Single Grid) --- */}
+        <div className="admin-section">
+            <div className="user-grid">
+            {users.length === 0 ? (
+                <p className="no-data-admin">No user accounts found.</p>
+            ) : (
+                users.map(user => {
+                    const userToRender = editingId === user.id ? usersDraft : user;
+                    return (
+                        <UserCard
+                            key={user.id}
+                            user={userToRender}
+                            currentUser={currentUser}
+                            isEditing={editingId === user.id}
+                            onSave={handleSaveUser}
+                            onStartEdit={handleStartEdit}
+                            onCancelEdit={handleCancelEdit}
+                            onChange={handleUserChange}
+                            onDelete={handleDeleteUser}
+                            // onPasswordChange prop REMOVED
+                        />
+                    );
+                })
+            )}
+            </div>
+        </div>
+        </div>
     );
-  }
-
-  return (
-    <div className="admin-panel-page">
-      <div className="page-header"><FiUsers /><h2>Admin Panel - User Accounts ({users.length})</h2></div>
-      <div className="page-header-underline"></div>
-      
-      {saveStatus && (
-        <div className={saveStatus.startsWith('❌') ? 'error-message' : 'success-message'} style={{ padding: '10px', marginBottom: '25px' }}>
-            {/* Added logic to correctly show the warning for password change */}
-            {saveStatus.startsWith('⚠️') ? 
-                <div style={{color: 'orange', backgroundColor: 'rgba(255, 165, 0, 0.1)', padding: '10px', borderRadius: '4px', textAlign: 'center', maxWidth: '400px'}}>{saveStatus}</div>
-                : saveStatus
-            }
-        </div>
-      )}
-
-      {/* --- User List (Single Grid) --- */}
-      <div className="admin-section">
-        <div className="user-grid">
-          {users.length === 0 ? (
-            <p className="no-data-admin">No user accounts found.</p>
-          ) : (
-            users.map(user => {
-                const userToRender = editingId === user.id ? usersDraft : user;
-                return (
-                    <UserCard
-                        key={user.id}
-                        user={userToRender}
-                        currentUser={currentUser}
-                        isEditing={editingId === user.id}
-                        onSave={handleSaveUser}
-                        onStartEdit={handleStartEdit}
-                        onCancelEdit={handleCancelEdit}
-                        onChange={handleUserChange}
-                        onDelete={handleDeleteUser}
-                        onPasswordChange={handlePasswordChange} // NEW prop
-                    />
-                );
-            })
-          )}
-        </div>
-      </div>
-    </div>
-  );
 }

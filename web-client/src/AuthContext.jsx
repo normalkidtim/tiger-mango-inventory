@@ -6,9 +6,10 @@ import {
   signInWithEmailAndPassword,
   signOut,
   createUserWithEmailAndPassword,
-  // 💡 NEW: Import required persistence functions
   setPersistence,
   browserSessionPersistence,
+  // NEW: Import updatePassword function
+  updatePassword,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -38,8 +39,7 @@ export function AuthProvider({ children }) {
   // Sign in with Firebase
   async function login(email, password) {
     
-    // ⭐ CHANGE 1: Set persistence to SESSION before signing in.
-    // This tells Firebase to clear the session when the window/tab is closed.
+    // Set persistence to SESSION before signing in.
     await setPersistence(auth, browserSessionPersistence);
 
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -57,6 +57,7 @@ export function AuthProvider({ children }) {
         setCurrentUser(userProfile);
         return userCredential;
     } else {
+        // If Firestore profile is missing (deleted by admin), block login
         await signOut(auth);
         throw new Error("Access denied. Account profile not found or has been disabled.");
     }
@@ -64,8 +65,6 @@ export function AuthProvider({ children }) {
 
   // Admin function to create a new user directly
   async function signupAdmin(email, password, firstName, lastName, contactNumber, role) {
-    // Note: Persistence is implicitly set by the caller's session, but the login function handles it on sign-in.
-    
     // 1. Create the user in Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -82,6 +81,16 @@ export function AuthProvider({ children }) {
     
     return userCredential;
   }
+  
+  // NEW FUNCTION: Change the password for the currently authenticated user
+  async function changeSelfPassword(newPassword) {
+      if (!auth.currentUser) {
+          throw new Error("No user is currently logged in.");
+      }
+      // Note: If the user hasn't logged in recently, this will fail with a 
+      // 'auth/requires-recent-login' error, which is a standard Firebase security measure.
+      await updatePassword(auth.currentUser, newPassword);
+  }
 
 
   // Sign out with Firebase
@@ -90,10 +99,7 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    // ⭐ CHANGE 2: Set persistence to SESSION immediately on component mount 
-    // to ensure subsequent reloads/state changes respect the session duration.
-    // NOTE: This runs asynchronously, but typically before the login happens.
-    // The explicit setting in `login` ensures it's applied correctly during sign-in.
+    // Set persistence to SESSION immediately on component mount 
     setPersistence(auth, browserSessionPersistence)
         .then(() => {
             // Listen for authentication state changes
@@ -127,8 +133,6 @@ export function AuthProvider({ children }) {
             setLoading(false);
         });
 
-    // The cleanup function is returned inside the .then block above.
-    // No explicit return here as the listener is set up conditionally.
   }, []);
 
   const value = {
@@ -136,6 +140,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     signupAdmin, 
+    changeSelfPassword, // EXPOSE THE NEW FUNCTION
   };
 
   return (
