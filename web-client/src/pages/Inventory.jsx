@@ -3,16 +3,17 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { 
-    doc, 
-    onSnapshot, 
-    updateDoc, 
-    addDoc, 
-    collection, 
-    serverTimestamp, 
-    setDoc, 
-    deleteDoc, 
-    deleteField // ✅ NEW: Import deleteField
-} from "firebase/firestore"; 
+  doc, 
+  onSnapshot, 
+  updateDoc, 
+  addDoc, 
+  collection, 
+  serverTimestamp, 
+  setDoc, 
+  deleteDoc, 
+  deleteField,
+  query,
+} from "firebase/firestore";
 import { useAuth } from "../AuthContext";
 import { FiGrid, FiBox, FiPackage, FiPlus, FiAlertCircle, FiTrash2 } from "react-icons/fi"; 
 import "../assets/styles/inventory.css";
@@ -23,7 +24,8 @@ const slugify = (text) => text.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0
 
 export default function Inventory() {
   const { currentUser } = useAuth();
-  const [inventoryItems, setInventoryItems] = useState({}); 
+  // State is an object mapping docId (category) to its items
+  const [inventoryData, setInventoryData] = useState({}); 
   const [loading, setLoading] = useState(true);
   
   // States for management forms
@@ -32,7 +34,6 @@ export default function Inventory() {
   const [newItemCategory, setNewItemCategory] = useState(''); 
   const [saveStatus, setSaveStatus] = useState('');
   
-  // A mapping for simple icons (used for the cards)
   const categoryIcons = {
     cups: FiBox,
     lids: FiPackage,
@@ -40,15 +41,16 @@ export default function Inventory() {
     'add-ons': FiPlus,
   };
 
-  // 1. Fetch ALL documents from the 'inventory' collection
+  // 1. Fetch data from the 'inventory' collection (separate documents)
   useEffect(() => {
-    // Listen to the entire collection
-    const unsub = onSnapshot(collection(db, "inventory"), (snap) => {
-      const allItems = {};
-      snap.forEach(docSnap => {
-        allItems[docSnap.id] = docSnap.data() || {};
+    // We listen to the entire 'inventory' collection
+    const q = query(collection(db, 'inventory'));
+    const unsub = onSnapshot(q, (querySnapshot) => {
+      const data = {};
+      querySnapshot.forEach((docSnap) => {
+        data[docSnap.id] = docSnap.data();
       });
-      setInventoryItems(allItems);
+      setInventoryData(data);
       setLoading(false);
     }, (error) => {
       console.error("Error fetching inventory:", error);
@@ -58,15 +60,27 @@ export default function Inventory() {
     return () => unsub();
   }, []);
   
+
   // 2. Core function to update stock and log the change
   const updateStockInFirebase = async (docId, field, value) => {
+    const numericValue = Number(value);
+    if (isNaN(numericValue) || numericValue < 0) return;
+    
     try {
-      const numericValue = Number(value);
-      if (isNaN(numericValue) || numericValue < 0) return;
-
-      const docRef = doc(db, "inventory", docId);
-      await updateDoc(docRef, { [field]: numericValue });
+      // Update the specific document in the 'inventory' collection
+      await updateDoc(doc(db, 'inventory', docId), {
+        [field]: numericValue,
+      });
       
+      // Optimistically update local state
+      setInventoryData(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          [field]: numericValue,
+        }
+      }));
+
       await addDoc(collection(db, "stock-logs"), {
         item: `${docId} - ${getDisplayName(field)}`,
         newValue: numericValue,
@@ -79,35 +93,31 @@ export default function Inventory() {
       setTimeout(() => setSaveStatus(''), 5000);
     }
   };
-
-  // 3. Add New Stock Category (New Firestore Document)
+  
+  // 3. Add New Stock Category (Adds a new document to 'inventory' collection)
   const handleAddNewCategory = async () => {
     const trimmedName = newCategoryName.trim();
     const docId = slugify(trimmedName);
 
-    if (!trimmedName || inventoryItems[docId]) {
+    if (!trimmedName || inventoryData[docId]) {
       alert('Invalid or duplicate category name.');
       return;
     }
     
     try {
-      // Use setDoc to create a new document in the inventory collection
-      await setDoc(doc(db, "inventory", docId), { 
-        "default-item": 0 // Initialize with a default item
-      }); 
-      setNewCategoryName('');
-      setSaveStatus(`✅ New stock category "${trimmedName}" created!`);
+        await setDoc(doc(db, 'inventory', docId), {}); 
+        setNewCategoryName('');
+        setSaveStatus(`✅ New stock category "${trimmedName}" created!`);
     } catch (error) {
-      console.error("Error creating category:", error);
-      setSaveStatus(`❌ Failed to create category: ${error.message}`);
-    } finally {
-      setTimeout(() => setSaveStatus(''), 5000);
+        console.error("Error creating new category:", error);
+        setSaveStatus(`❌ Error creating new category: ${error.message}`);
+        setTimeout(() => setSaveStatus(''), 5000);
     }
   };
 
-  // 4. Add New Item Type (New Field to Existing Document)
+  // 4. Add New Item Type (Adds a new field inside an 'inventory' document)
   const handleAddNewItem = async () => {
-    const docId = newItemCategory; // The category document ID
+    const docId = newItemCategory; // The category docId
     const trimmedName = newItemName.trim();
     const fieldName = slugify(trimmedName);
 
@@ -115,56 +125,56 @@ export default function Inventory() {
       alert('Select a category and enter an item name.');
       return;
     }
-    if (inventoryItems[docId] && inventoryItems[docId][fieldName] !== undefined) {
+    if (inventoryData[docId] && inventoryData[docId][fieldName] !== undefined) {
       alert(`Item "${trimmedName}" already exists in this category.`);
       return;
     }
     
     try {
-      // Use updateDoc to add a new field to the existing document
-      const docRef = doc(db, "inventory", docId);
-      await updateDoc(docRef, { [fieldName]: 0 }); // Initialize new item with 0 stock
-      
-      setNewItemName('');
-      setNewItemCategory('');
-      setSaveStatus(`✅ New item "${trimmedName}" added to ${docId}!`);
+        // Update the existing document with a new field/item
+        await updateDoc(doc(db, 'inventory', docId), {
+            [fieldName]: 0,
+        });
+        
+        setNewItemName('');
+        setNewItemCategory('');
+        setSaveStatus(`✅ New item "${trimmedName}" added to ${getDisplayName(docId)}!`);
     } catch (error) {
-      console.error("Error adding new item:", error);
-      setSaveStatus(`❌ Failed to add new item: ${error.message}`);
-    } finally {
-      setTimeout(() => setSaveStatus(''), 5000);
+        console.error("Error adding new item:", error);
+        setSaveStatus(`❌ Error adding new item: ${error.message}`);
+        setTimeout(() => setSaveStatus(''), 5000);
     }
   };
   
-  // 5. Delete Stock Category (Document)
+  // 5. Delete Stock Category (Removes a document from 'inventory' collection)
   const handleDeleteCategory = async (docId, categoryName) => {
     if (!window.confirm(`WARNING: This will permanently delete the entire "${categoryName}" inventory category and all its stock levels. Continue?`)) return;
 
     try {
-        await deleteDoc(doc(db, "inventory", docId));
+        // Delete the document from the 'inventory' collection
+        await deleteDoc(doc(db, 'inventory', docId));
         setSaveStatus(`🗑️ Stock category "${categoryName}" deleted successfully.`);
     } catch (error) {
         console.error("Error deleting category:", error);
-        setSaveStatus(`❌ Failed to delete category: ${error.message}`);
-    } finally {
+        setSaveStatus(`❌ Error deleting category: ${error.message}`);
         setTimeout(() => setSaveStatus(''), 5000);
     }
   };
 
-  // 6. ✅ NEW: Delete Item from Category (Field)
+  // 6. Delete Item from Category (Deletes a field inside an 'inventory' document)
   const handleDeleteItem = async (docId, field, itemName) => {
     if (!window.confirm(`Are you sure you want to delete the item "${itemName}" from ${getDisplayName(docId)}? This will delete its stock level forever.`)) return;
 
     try {
-        const docRef = doc(db, "inventory", docId);
-        
-        // Use deleteField to remove the specific key from the document
-        await updateDoc(docRef, { [field]: deleteField() });
+        // Delete the specific field within the document
+        await updateDoc(doc(db, 'inventory', docId), {
+            [field]: deleteField(),
+        });
+
         setSaveStatus(`🗑️ Item "${itemName}" deleted successfully.`);
     } catch (error) {
         console.error("Error deleting item:", error);
-        setSaveStatus(`❌ Failed to delete item: ${error.message}`);
-    } finally {
+        setSaveStatus(`❌ Error deleting item: ${error.message}`);
         setTimeout(() => setSaveStatus(''), 5000);
     }
   };
@@ -180,7 +190,7 @@ export default function Inventory() {
       );
   }
 
-  const availableCategories = Object.keys(inventoryItems);
+  const availableCategories = Object.keys(inventoryData);
 
   return (
     <div>
@@ -197,23 +207,21 @@ export default function Inventory() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
         
         {/* Add New Stock Category (Document) */}
-        <div className="add-new-form" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--background-light)' }}>
+        <div className="manager-form-container">
             <h3><FiBox /> Add New Stock Category</h3>
-            <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px' }}>Category Name (e.g., "Paper Bags")</label>
+            <div className="form-group-item">
+                <label>Category Name (e.g., "Paper Bags")</label>
                 <input 
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     placeholder="Enter new stock category name"
-                    className="auth-form input"
-                    style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                    className="input-field"
                 />
             </div>
             <button 
                 onClick={handleAddNewCategory} 
-                className="auth-button" 
-                style={{ backgroundColor: 'var(--gold-accent)', color: 'var(--background-dark)', marginTop: '15px' }}
+                className="btn-add-action btn-add-primary"
                 disabled={!newCategoryName.trim()}
             >
                 + Create Category
@@ -221,15 +229,14 @@ export default function Inventory() {
         </div>
 
         {/* Add New Item Type (Field) */}
-        <div className="add-new-form" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--background-light)' }}>
+        <div className="manager-form-container">
             <h3><FiPlus /> Add New Item Type to Category</h3>
-            <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px' }}>Select Existing Category</label>
+            <div className="form-group-item">
+                <label>Select Existing Category</label>
                 <select 
                     value={newItemCategory} 
                     onChange={(e) => setNewItemCategory(e.target.value)}
-                    className="auth-form input"
-                    style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                    className="input-field"
                 >
                     <option value="" disabled>Select category...</option>
                     {availableCategories.map(catId => (
@@ -238,22 +245,20 @@ export default function Inventory() {
                 </select>
             </div>
 
-            <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px' }}>Item Name (e.g., "Bamboo Straw" or "Small Napkin")</label>
+            <div className="form-group-item">
+                <label>Item Name (e.g., "Bamboo Straw" or "Small Napkin")</label>
                 <input 
                     type="text"
                     value={newItemName}
                     onChange={(e) => setNewItemName(e.target.value)}
                     placeholder="New item name"
-                    className="auth-form input"
-                    style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                    className="input-field"
                 />
             </div>
 
             <button 
                 onClick={handleAddNewItem} 
-                className="auth-button"
-                style={{ backgroundColor: '#0052cc', color: 'var(--text-primary)', marginTop: '15px' }}
+                className="btn-add-action btn-add-secondary"
                 disabled={!newItemCategory || !newItemName.trim()}
             >
                 + Add Item
@@ -271,12 +276,13 @@ export default function Inventory() {
             <InventoryCard 
               key={docId}
               title={categoryName}
-              items={inventoryItems[docId]}
+              // items is the data object from the document
+              items={inventoryData[docId]} 
               icon={<CategoryIcon />}
               docId={docId}
               onUpdate={(field, value) => updateStockInFirebase(docId, field, value)}
               onDelete={() => handleDeleteCategory(docId, categoryName)}
-              onDeleteItem={handleDeleteItem} // ✅ PASS NEW FUNCTION
+              onDeleteItem={handleDeleteItem} 
             />
           );
         })}
@@ -313,7 +319,7 @@ function InventoryCard({ title, items, icon, docId, onUpdate, onDelete, onDelete
                 defaultValue={item.stock}
                 onBlur={(e) => onUpdate(item.id, e.target.value)}
               />
-              {/* ✅ NEW: Delete Item Button */}
+              {/* Delete Item Button */}
               <button 
                 onClick={() => onDeleteItem(docId, item.id, item.name)}
                 style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer', padding: '0', marginLeft: '5px' }}

@@ -1,19 +1,29 @@
 :root {
-  --background-dark: #121212;
-  --background-light: #1E1E1E;
-  --gold-accent: #ffca28;
-  --gold-accent-hover: #e6b622;
-  --text-primary: #EAEAEA;
-  --text-secondary: #b0b0b0;
-  --border-color: #333333;
+  /*
+   * MOBILE THEME (Primary: #E53935 / Accent: #0052cc)
+   */
+  --background-dark: #FFFFFF; /* White */
+  --background-light: #F4F5F7; /* Light Gray (Used for content blocks/cards) */
+  
+  --primary-brand: #E53935; /* Mobile's Brand Red */
+  --accent-button: #0065ff; /* Mobile's Primary Button Blue */
+  
+  --text-primary: #172b4d; /* Dark Text */
+  --text-secondary: #5e6c84; /* Gray Text */
+  
+  --border-color: #dfe1e6; /* Light Gray Border */
+  
+  /* Retain font from old style */
   --font-main: 'Inter', 'Segoe UI', sans-serif;
 }
 html { font-size: 17px; }
 body {
   margin: 0; padding: 0; font-family: var(--font-main);
-  background-color: var(--background-dark); color: var(--text-primary); line-height: 1.6;
+  background-color: var(--background-light); /* Light background */
+  color: var(--text-primary); 
+  line-height: 1.6;
 }
 h1, h2, h3, h4, h5, h6 { margin: 0 0 1rem 0; font-weight: 600; color: var(--text-primary); }
 h2 { font-size: 1.75rem; }
-.page-header { display: flex; align-items: center; gap: 12px; font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
-.page-header-underline { height: 3px; width: 100%; background: var(--gold-accent); border-radius: 2px; margin-bottom: 24px; }
+.page-header { display: flex; align-items: center; gap: 12px; font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; color: var(--primary-brand); } /* Use brand color for header */
+.page-header-underline { height: 3px; width: 100%; background: var(--primary-brand); border-radius: 2px; margin-bottom: 24px; }

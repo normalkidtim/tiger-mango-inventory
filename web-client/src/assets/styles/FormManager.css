@@ -1,0 +1,107 @@
+/* web-client/src/assets/styles/FormManager.css */
+
+/* --- General Form Containers --- */
+.manager-form-container {
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-dark); /* White card background */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Container for grouping inline fields */
+.form-group-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Wrapper for fields that should appear on a single line (like prices or name/price) */
+.form-inline-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end; /* Aligns items/buttons to the bottom line */
+}
+
+/* Ensure child items fill the space within the inline group */
+.form-inline-group .form-group-item {
+    flex: 1; 
+}
+
+/* Specific size override for Add-on Name/Price distribution */
+.form-inline-group .addon-name-field {
+    flex: 2; /* Takes 2/3rds of the space */
+}
+.form-inline-group .addon-price-field {
+    flex: 1; /* Takes 1/3rd of the space */
+}
+
+
+/* --- Input Field Styling (Re-using classes where possible) --- */
+
+.form-group-item label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.input-field {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: var(--font-main);
+    background-color: var(--background-light); /* Light Gray input background */
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    outline: none;
+    transition: border 0.2s ease;
+}
+.input-field:focus {
+    border-color: var(--primary-brand);
+}
+
+/* --- Button Styling --- */
+
+.btn-add-action {
+    height: 40px; /* Standard button height */
+    padding: 0 15px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn-add-primary {
+    background-color: var(--primary-brand);
+    color: white;
+}
+.btn-add-secondary {
+    background-color: var(--accent-button);
+    color: white;
+}
+.btn-delete-item {
+    background-color: #D32F2F; 
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Table Header/Container for Category Deletion button */
+.category-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}

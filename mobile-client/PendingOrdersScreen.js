@@ -5,9 +5,9 @@ import {
   FlatList, 
   TouchableOpacity, 
   SafeAreaView, 
-  StyleSheet, 
-  Alert,
-  ActivityIndicator
+  StyleSheet,
+  ActivityIndicator,
+  Alert 
 } from 'react-native';
 import { db } from './firebase';
 import { 
@@ -18,9 +18,8 @@ import {
   doc, 
   updateDoc, 
   serverTimestamp,
-  getFirestore, // Import necessary Firestore tools
+  getFirestore, 
   runTransaction,
-  getDoc
 } from 'firebase/firestore';
 import { globalStyles, FONTS, COLORS, SIZES } from './styles';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,20 +29,47 @@ const firestore = getFirestore();
 
 // Helper function to format keys like 'large-cup' to 'Large Cup'
 const formatKey = (key) => key.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-// NEW Helper function to consistently get a category ID from the stored name
+// Helper function to consistently get a category ID from the stored name
 const getCategoryId = (name) => name.toLowerCase().replace(/ /g, '-');
 
 
-// --- DEDUCTION CONSTANTS (Using lowercase, hyphenated category names) ---
-const FLAT_LID_CATEGORIES = ['milk-tea', 'iced-coffee', 'fruit-tea', 'soda-series', 'milk-series', 'latte-series', 'non-coffee', 'hot-drinks', 'yogurt-series', 'fruit-tea-yogurt'];
-const DOME_LID_CATEGORIES = ['frappe'];
+// --- DEDUCTION CONSTANTS (FIXED TO MATCH SLUGGED CATEGORY IDS) ---
 
-const BOBA_STRAW_CATEGORIES = ['milk-tea', 'fruit-tea', 'milk-series', 'hot-drinks', 'yogurt-series', 'fruit-tea-yogurt'];
-const THIN_STRAW_CATEGORIES = ['iced-coffee', 'soda-series', 'latte-series', 'non-coffee'];
+// The slugged category IDs from your menu were: milktea, iced-coffee, fruit-tea, soda, milk-series, latte-series, non-coffee, hot-drinks, yogurt-series, fruit-tea-yogurt, frappe.
+
+const FLAT_LID_CATEGORIES = [
+  'milktea', 
+  'iced-coffee', 
+  'fruit-tea', 
+  'soda', // ✅ Corrected from soda-series
+  'milk-series', 
+  'latte-series', 
+  'non-coffee', 
+  'hot-drinks', 
+  'yogurt-series', 
+  'fruit-tea-yogurt'
+];
+const DOME_LID_CATEGORIES = ['frappe']; 
+
+const BOBA_STRAW_CATEGORIES = [
+  'milktea', 
+  'fruit-tea', 
+  'milk-series', 
+  'hot-drinks', 
+  'yogurt-series', 
+  'fruit-tea-yogurt'
+];
+const THIN_STRAW_CATEGORIES = [
+  'iced-coffee', 
+  'soda', // ✅ Corrected from soda-series
+  'latte-series', 
+  'non-coffee'
+];
 
 
-// --- INVENTORY DEDUCTION LOGIC ---
+// --- INVENTORY DEDUCTION LOGIC (STRICT AND CORRECT) ---
 const updateInventory = async (orderId, orderItems) => {
+    // Document IDs must match your Firestore collection
     const inventoryRefs = {
         cups: doc(firestore, 'inventory', 'cups'),
         lids: doc(firestore, 'inventory', 'lids'),
@@ -51,9 +77,10 @@ const updateInventory = async (orderId, orderItems) => {
         addons: doc(firestore, 'inventory', 'add-ons'),
     };
 
+    // Deduction calculation structure (matching Firestore field names)
     const deductions = {
-        cups: {},
-        lids: { 'flat-lid': 0, 'dome-lid': 0 },
+        cups: { 'medium-cup': 0, 'large-cup': 0 }, 
+        lids: { 'flat-lid': 0, 'dome-lid': 0 },     
         straws: { 'boba-straw': 0, 'thin-straw': 0 },
         addons: {},
     };
@@ -61,27 +88,27 @@ const updateInventory = async (orderId, orderItems) => {
     // 1. Calculate Deductions
     orderItems.forEach(item => {
         const quantity = item.quantity;
-        const size = item.size; // 'medium' or 'large'
+        const size = item.size; 
         
-        // **FIXED:** Use categoryName and format it for consistent comparison
+        // This must match the ID used in the deduction categories list
         const categoryId = getCategoryId(item.categoryName); 
 
-        // Cup Deduction (Logic unchanged, assumes the Firebase keys are correct: medium-cup, large-cup)
-        const cupKey = `${size}-cup`;
+        // Cup Deduction
+        const cupKey = `${size}-cup`; 
         deductions.cups[cupKey] = (deductions.cups[cupKey] || 0) + quantity;
 
         // Lid Deduction
         if (DOME_LID_CATEGORIES.includes(categoryId)) {
-            deductions.lids['dome-lid'] += quantity;
+            deductions.lids['dome-lid'] = (deductions.lids['dome-lid'] || 0) + quantity;
         } else if (FLAT_LID_CATEGORIES.includes(categoryId)) {
-            deductions.lids['flat-lid'] += quantity;
+            deductions.lids['flat-lid'] = (deductions.lids['flat-lid'] || 0) + quantity;
         }
         
         // Straw Deduction
         if (BOBA_STRAW_CATEGORIES.includes(categoryId)) {
-            deductions.straws['boba-straw'] += quantity;
+            deductions.straws['boba-straw'] = (deductions.straws['boba-straw'] || 0) + quantity;
         } else if (THIN_STRAW_CATEGORIES.includes(categoryId)) {
-            deductions.straws['thin-straw'] += quantity;
+            deductions.straws['thin-straw'] = (deductions.straws['thin-straw'] || 0) + quantity;
         }
 
         // Add-ons Deduction
@@ -101,48 +128,33 @@ const updateInventory = async (orderId, orderItems) => {
         const currentStraws = (await transaction.get(inventoryRefs.straws)).data();
         const currentAddons = (await transaction.get(inventoryRefs.addons)).data();
 
-        // Check stock and calculate new stock for Cups
         const newCups = { ...currentCups };
-        for (const [key, qty] of Object.entries(deductions.cups)) {
-            if ((currentCups[key] || 0) < qty) {
-                throw new Error(`Insufficient stock for ${formatKey(key)}.`);
-            }
-            newCups[key] -= qty;
-        }
-
-        // Check stock and calculate new stock for Lids
         const newLids = { ...currentLids };
-        for (const [key, qty] of Object.entries(deductions.lids)) {
-            if (qty > 0) {
-                // Key check is required because 'dome-lid' or 'flat-lid' might not exist in the document yet
-                if (currentLids && (currentLids[key] || 0) < qty) {
-                    throw new Error(`Insufficient stock for ${formatKey(key)}.`);
-                }
-                newLids[key] -= qty;
-            }
-        }
-        
-        // Check stock and calculate new stock for Straws
         const newStraws = { ...currentStraws };
-        for (const [key, qty] of Object.entries(deductions.straws)) {
-             if (qty > 0) {
-                // Key check is required
-                if (currentStraws && (currentStraws[key] || 0) < qty) {
-                    throw new Error(`Insufficient stock for ${formatKey(key)}.`);
-                }
-                newStraws[key] -= qty;
-             }
-        }
-
-        // Check stock and calculate new stock for Add-ons
         const newAddons = { ...currentAddons };
-        for (const [key, qty] of Object.entries(deductions.addons)) {
-            // Key check is required
-            if (currentAddons && (currentAddons[key] || 0) < qty) {
-                throw new Error(`Insufficient stock for ${formatKey(key)}.`);
+
+        // Helper function for strict stock checking and deduction
+        const performDeduction = (currentStock, newStock, deductionMap, typeName) => {
+            for (const [key, qty] of Object.entries(deductionMap)) {
+                if (qty > 0) {
+                    const stock = currentStock?.[key] || 0;
+                    
+                    if (stock < qty) {
+                        const itemName = typeName === 'Add-on' ? `Add-on: ${formatKey(key)}` : formatKey(key);
+                        throw new Error(`Insufficient stock for ${itemName}.`);
+                    }
+                    // Perform actual deduction
+                    newStock[key] = stock - qty;
+                }
             }
-            newAddons[key] -= qty;
-        }
+        };
+
+        // Apply strict deduction to all categories
+        performDeduction(currentCups, newCups, deductions.cups, 'Cup');
+        performDeduction(currentLids, newLids, deductions.lids, 'Lid'); 
+        performDeduction(currentStraws, newStraws, deductions.straws, 'Straw'); 
+        performDeduction(currentAddons, newAddons, deductions.addons, 'Add-on');
+
 
         // 3. Commit all changes
         transaction.update(inventoryRefs.cups, newCups);
@@ -155,7 +167,7 @@ const updateInventory = async (orderId, orderItems) => {
 // --- SCREEN COMPONENT ---
 
 const PendingOrdersScreen = () => {
-  const [pendingOrders, setPendingOrders] = useState([]);
+  const [pendingOrders, setPendingOrders] = useState([]); 
   const [loading, setLoading] = useState(true);
 
   // 1. Fetch pending orders using real-time listener (onSnapshot)

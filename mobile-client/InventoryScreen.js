@@ -3,13 +3,14 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  SafeAreaView, 
   ScrollView,
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { db } from './firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { SafeAreaView } from 'react-native-safe-area-context'; 
+import { db } from './firebase'; 
+import { collection, onSnapshot, query } from 'firebase/firestore'; 
+
 import { Ionicons } from '@expo/vector-icons';
 import { globalStyles, FONTS, COLORS, SIZES } from './styles';
 
@@ -26,10 +27,13 @@ const InventoryCard = ({ title, data, iconName }) => {
   // Sort items alphabetically for consistent display
   items.sort((a, b) => a.name.localeCompare(b.name));
 
+  // FIX: Used 'square-outline' as a fallback icon
+  const icon = iconName || (title.toLowerCase().includes('cup') ? 'md-cup-outline' : 'square-outline');
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Ionicons name={iconName} size={20} color={COLORS.primary} />
+        <Ionicons name={icon} size={20} color={COLORS.primary} />
         <Text style={styles.cardTitle}>{title}</Text>
       </View>
       <View style={styles.itemList}>
@@ -45,6 +49,7 @@ const InventoryCard = ({ title, data, iconName }) => {
             <Text style={styles.itemStock}>{item.stock.toLocaleString()}</Text>
           </View>
         )) : (
+          // This Text component was already correct, but retaining it for context
           <Text style={styles.noData}>No items loaded in this category.</Text>
         )}
       </View>
@@ -53,98 +58,71 @@ const InventoryCard = ({ title, data, iconName }) => {
 };
 
 const InventoryScreen = () => {
-  const [inventoryData, setInventoryData] = useState({
-    cups: null,
-    lids: null,
-    straws: null,
-    addons: null,
-  });
+  const [inventoryData, setInventoryData] = useState({});
   const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
-    // Array of documents to listen to
-    const documentsToFetch = [
-      { key: 'cups', docId: 'cups' },
-      { key: 'lids', docId: 'lids' },
-      { key: 'straws', docId: 'straws' },
-      { key: 'addons', docId: 'add-ons' }, // Matches your Firebase structure: inventory/add-ons
-    ];
-
-    const unsubscribers = documentsToFetch.map(({ key, docId }) => {
-      // Listen to a single document within the 'inventory' collection
-      const docRef = doc(db, 'inventory', docId);
-      
-      const unsubscribe = onSnapshot(docRef, (docSnap) => {
-        setInventoryData(prev => ({
-          ...prev,
-          [key]: docSnap.data() || {}, // Store the fields/values
-        }));
-        
-        // Only set loading to false once after the initial data load
-        if (loading) {
-            setLoading(false);
-        }
-      }, (error) => {
-        console.error(`Error fetching ${docId} inventory:`, error);
-        if (loading) {
-            Alert.alert("Error", `Failed to fetch inventory data for ${docId}.`);
-            setLoading(false);
-        }
+    const q = query(collection(db, 'inventory'));
+    
+    const unsub = onSnapshot(q, (querySnapshot) => {
+      const data = {};
+      querySnapshot.forEach((docSnap) => {
+        data[docSnap.id] = docSnap.data();
       });
-
-      return unsubscribe;
+      setInventoryData(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching inventory:", error);
+      Alert.alert("Error", "Failed to load inventory data.");
+      setLoading(false);
     });
 
-    // Handle initial loading state timeout just in case
-    const timer = setTimeout(() => {
-        if (loading) setLoading(false);
-    }, 5000); 
+    return () => unsub(); 
+  }, []);
 
-    // Cleanup all subscriptions on component unmount
-    return () => {
-        unsubscribers.forEach(unsub => unsub());
-        clearTimeout(timer);
-    };
-  }, []); // Empty dependency array means this runs only once on mount
+  const iconMap = {
+    'cups': 'md-cup-outline',
+    'lids': 'md-albums-outline',
+    'straws': 'md-water-outline',
+    'add-ons': 'md-pricetag-outline',
+  };
 
-  // Check if any of the main data sections are still null (initial state)
-  const isDataLoading = loading || 
-    inventoryData.cups === null || 
-    inventoryData.lids === null || 
-    inventoryData.straws === null || 
-    inventoryData.addons === null;
+  const sortedCategories = Object.keys(inventoryData)
+    .sort()
+    .map(docId => ({
+        id: docId,
+        name: formatKey(docId),
+        data: inventoryData[docId],
+        icon: iconMap[docId] || 'square-outline' 
+    }));
+
 
   return (
-    <SafeAreaView style={globalStyles.container}>
+    <SafeAreaView style={globalStyles.container}> 
       <Text style={styles.screenTitle}>Inventory Stock</Text>
       
-      {isDataLoading ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Loading real-time stock...</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <InventoryCard 
-            title="Cups" 
-            data={inventoryData.cups} 
-            iconName="md-cup-outline"
-          />
-          <InventoryCard 
-            title="Lids" 
-            data={inventoryData.lids} 
-            iconName="md-albums-outline"
-          />
-          <InventoryCard 
-            title="Straws" 
-            data={inventoryData.straws} 
-            iconName="md-water-outline"
-          />
-          <InventoryCard 
-            title="Add-ons" 
-            data={inventoryData.addons} 
-            iconName="md-pricetag-outline"
-          />
+          {sortedCategories.length > 0 ? (
+            sortedCategories.map(category => (
+              <InventoryCard 
+                key={category.id}
+                title={category.name} 
+                data={category.data} 
+                iconName={category.icon}
+              />
+            ))
+          ) : (
+            // ✅ FIX APPLIED HERE: Ensure the fallback message is inside <Text>
+            <Text style={styles.noDataMessage}>
+                No inventory categories found. Please add them via the Web Client Inventory page.
+            </Text>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -175,6 +153,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: COLORS.darkGray,
     fontSize: FONTS.body.fontSize,
+  },
+  noDataMessage: { 
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: FONTS.body.fontSize,
+    color: COLORS.darkGray,
   },
   // --- Card Styles ---
   card: {

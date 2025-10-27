@@ -5,7 +5,7 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background-color: var(--background-light);
+  background-color: var(--background-dark);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   margin-bottom: 24px;
@@ -21,7 +21,7 @@
 .filter-group input[type="date"],
 .filter-group input[type="text"] {
   font-family: var(--font-main);
-  background-color: var(--background-dark);
+  background-color: var(--background-light); /* Light background for input */
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -31,18 +31,18 @@
 
 /* Style for the date picker icon */
 .filter-group input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.8);
+  filter: invert(0); /* Default color for light theme */
   cursor: pointer;
 }
 
-/* ✅ New style for outline buttons */
+/* New style for outline buttons */
 .btn-outline {
   background-color: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
 }
 .btn-outline:hover {
-  border-color: var(--text-secondary);
-  color: var(--text-primary);
-  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary-brand);
+  color: var(--primary-brand);
+  background-color: rgba(229, 57, 53, 0.05); /* Light red hover */
 }

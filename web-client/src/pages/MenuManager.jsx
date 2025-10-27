@@ -2,9 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { FiEdit, FiSave, FiAlertCircle, FiTrash2 } from 'react-icons/fi'; // ✅ ADDED FiTrash2
+import { doc, onSnapshot, setDoc, updateDoc, deleteField } from 'firebase/firestore';
+import { FiEdit, FiSave, FiAlertCircle, FiTrash2, FiPlus } from 'react-icons/fi'; 
 import '../assets/styles/tables.css';
+import '../assets/styles/FormManager.css'; 
+
+const getDisplayName = (key) => key.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+const slugify = (text) => text.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
 
 export default function MenuManager() {
   const [menu, setMenu] = useState(null);
@@ -12,23 +16,27 @@ export default function MenuManager() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
 
-  // New states for adding items
+  // States for general menu management forms
   const [newCatName, setNewCatName] = useState('');
   const [newProdName, setNewProdName] = useState('');
   const [newProdCatId, setNewProdCatId] = useState('');
   const [newProdPriceM, setNewProdPriceM] = useState('');
   const [newProdPriceL, setNewProdPriceL] = useState('');
+  
+  // States for Add-on Form
+  const [newAddonName, setNewAddonName] = useState('');
+  const [newAddonPrice, setNewAddonPrice] = useState('');
 
-  // 1. Fetch menu data from Firestore
+
+  // 1. Fetch menu data from Firestore (Source of Truth)
   useEffect(() => {
     const docRef = doc(db, 'config', 'menu');
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      // This listener is the ONLY place that should set the 'menu' state.
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Ensure data is initialized correctly, even if arrays are missing/null in DB
         setMenu({ categories: data.categories || [], addons: data.addons || [] });
       } else {
-        // Handle case where document is truly missing or empty
         setMenu({ categories: [], addons: [] });
       }
       setLoading(false);
@@ -36,22 +44,127 @@ export default function MenuManager() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Handle changes to the state
+  // 3. Core function to save the current state to Firestore
+  const commitChanges = async (dataToSave, successMessage) => {
+    if (!dataToSave) return;
+    
+    setIsSaving(true);
+    setSaveStatus(''); 
+
+    try {
+      const cleanedMenu = JSON.parse(JSON.stringify(dataToSave));
+
+      // ✅ FIX APPLIED HERE: Safely clean products but DO NOT filter out categories.
+      const cleanedCategories = (cleanedMenu.categories || []).map(category => {
+        // Ensure products array exists
+        category.products = (category.products || []).filter(product => {
+            if (product.prices) {
+                // Clean up individual product prices
+                for (const size in product.prices) {
+                    const price = product.prices[size];
+                    if (typeof price === 'number' && (isNaN(price) || price <= 0)) {
+                        delete product.prices[size];
+                    }
+                }
+                // Keep the product if it has at least one price left
+                return Object.keys(product.prices).length > 0;
+            }
+            return false; // Remove product if it has no price object
+        });
+        return category; // Return category even if products is empty (allows new categories to persist)
+      });
+      
+      cleanedMenu.categories = cleanedCategories; 
+      
+      // Perform the WRITE (setDoc) - This updates the Menu listing
+      await setDoc(doc(db, 'config', 'menu'), cleanedMenu);
+      
+      setSaveStatus(successMessage || '✅ Changes saved successfully!'); 
+
+    } catch (error) {
+      console.error('Error saving menu:', error);
+      setSaveStatus(`❌ Failed to save menu: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveStatus(''), 5000);
+    }
+  };
+
+
+  // --- HANDLERS FOR ADD-ONS ---
+  
   const handleAddonPriceChange = (id, newPrice) => {
     const updatedAddons = menu.addons.map(addon => 
       addon.id === id ? { ...addon, price: Number(newPrice) } : addon
     );
     setMenu(prev => ({ ...prev, addons: updatedAddons }));
   };
+  
+  const handlePriceUpdateSave = (successMessage) => {
+      commitChanges(menu, successMessage);
+  }
+
+  const handleAddNewAddon = async () => { 
+    const trimmedName = newAddonName.trim();
+    const price = Number(newAddonPrice);
+    const id = slugify(trimmedName);
+
+    if (!trimmedName || isNaN(price) || price <= 0) {
+        alert('Please enter a valid name and a price greater than zero.');
+        return;
+    }
+    if (menu.addons.find(a => a.id === id)) {
+        alert('An add-on with this name already exists.');
+        return;
+    }
+
+    const newAddon = { id, name: trimmedName, price };
+    const newMenuState = { ...menu, addons: [...(menu.addons || []), newAddon] };
+    
+    try {
+        await commitChanges(newMenuState, `✅ New add-on "${trimmedName}" added and saved.`);
+
+        await setDoc(doc(db, 'inventory', 'add-ons'), {
+            [id]: 0,
+        }, { merge: true });
+
+    } catch (error) {
+        console.error("Dual write failed:", error);
+        setSaveStatus(`❌ Failed to add add-on inventory: ${error.message}`);
+    }
+
+    setNewAddonName('');
+    setNewAddonPrice('');
+  };
+  
+  const handleDeleteAddon = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete the add-on: ${name}?`)) return;
+
+    const updatedAddons = menu.addons.filter(addon => addon.id !== id);
+    const newMenuState = { ...menu, addons: updatedAddons };
+
+    try {
+        await commitChanges(newMenuState, `🗑️ Add-on "${name}" deleted and saved.`);
+
+        await updateDoc(doc(db, 'inventory', 'add-ons'), {
+            [id]: deleteField(),
+        });
+
+    } catch (error) {
+        console.error("Dual delete failed:", error);
+        setSaveStatus(`❌ Failed to delete add-on inventory item: ${error.message}`);
+    }
+  };
+
+
+  // --- HANDLERS FOR PRODUCTS/CATEGORIES ---
 
   const handleProductPriceChange = (catId, prodId, size, newPrice) => {
     const updatedCategories = menu.categories.map(category => {
       if (category.id === catId) {
-        const updatedProducts = category.products.map(product => {
+        const updatedProducts = (category.products || []).map(product => {
           if (product.id === prodId) {
-            // Ensure prices object exists before updating size
             const newPrices = { ...product.prices, [size]: Number(newPrice) };
-            // Optional: Remove size if price is empty/zero
             if (Number(newPrice) <= 0) delete newPrices[size];
             return { ...product, prices: newPrices };
           }
@@ -63,92 +176,32 @@ export default function MenuManager() {
     });
     setMenu(prev => ({ ...prev, categories: updatedCategories }));
   };
-  
-  // ✅ NEW: Function to delete a specific product (flavor)
-  const handleDeleteProduct = (catId, prodId) => {
-    if (!window.confirm("Are you sure you want to delete this flavor? This cannot be undone.")) return;
 
-    const updatedCategories = menu.categories.map(category => {
-        if (category.id === catId) {
-            const remainingProducts = category.products.filter(product => product.id !== prodId);
-            return { ...category, products: remainingProducts };
-        }
-        return category;
-    });
-    setMenu(prev => ({ ...prev, categories: updatedCategories }));
-    // Immediately save the changes to the database
-    handleSaveMenu();
-  };
-
-  // ✅ NEW: Function to delete an entire category
-  const handleDeleteCategory = (catId, catName) => {
-    if (!window.confirm(`Are you sure you want to delete the entire category: ${catName}? This will remove all flavors inside it.`)) return;
-    
-    const remainingCategories = menu.categories.filter(category => category.id !== catId);
-    setMenu(prev => ({ ...prev, categories: remainingCategories }));
-    // Immediately save the changes to the database
-    handleSaveMenu();
-  };
-
-
-  // 3. Save to Firestore
-  const handleSaveMenu = async () => {
-    if (!menu) return;
-    setIsSaving(true);
-    setSaveStatus('');
-
-    try {
-      // Clean up the data before saving (e.g., remove products/sizes with zero/empty price)
-      const cleanedMenu = JSON.parse(JSON.stringify(menu));
-
-      cleanedMenu.categories.forEach(category => {
-          category.products.forEach(product => {
-              for (const size in product.prices) {
-                  const price = product.prices[size];
-                  // If the price is 0 or less, remove the size option
-                  if (typeof price === 'number' && (isNaN(price) || price <= 0)) {
-                      delete product.prices[size];
-                  }
-              }
-          });
-          // Remove products with no prices (no longer functional)
-          category.products = category.products.filter(product => Object.keys(product.prices).length > 0);
-      });
-      
-      await setDoc(doc(db, 'config', 'menu'), cleanedMenu);
-      setSaveStatus('✅ Menu saved successfully! Live menu updated.');
-    } catch (error) {
-      console.error('Error saving menu:', error);
-      setSaveStatus(`❌ Failed to save menu: ${error.message}`);
-    } finally {
-      setIsSaving(false);
-      setTimeout(() => setSaveStatus(''), 5000);
-    }
-  };
-
-  // 4. Implement adding new category
-  const handleAddNewCategory = () => {
+  const handleAddNewCategory = async () => { 
     const trimmedName = newCatName.trim();
-    if (!trimmedName || menu.categories.find(c => c.name.toLowerCase() === trimmedName.toLowerCase())) {
+    if (!trimmedName || (menu.categories || []).find(c => c.name.toLowerCase() === trimmedName.toLowerCase())) {
         alert('Invalid or duplicate category name.');
         return;
     }
-    const newCatId = trimmedName.toLowerCase().replace(/\s/g, '-');
-    const newCategory = { id: newCatId, name: trimmedName, products: [] };
-    setMenu(prev => ({ ...prev, categories: [...prev.categories, newCategory] }));
+    const newCatId = slugify(trimmedName);
+    // Explicitly define products as empty array for safety
+    const newCategory = { id: newCatId, name: trimmedName, products: [] }; 
+    
+    const newMenuState = { ...menu, categories: [...(menu.categories || []), newCategory] };
+    
+    await commitChanges(newMenuState, `✅ New category "${trimmedName}" created and saved.`);
     setNewCatName('');
   };
 
-  // 5. Implement adding new product/flavor
-  const handleAddNewProduct = () => {
+  const handleAddNewProduct = async () => { 
       const trimmedName = newProdName.trim();
-      const category = menu.categories.find(c => c.id === newProdCatId);
+      const category = (menu.categories || []).find(c => c.id === newProdCatId);
       
       if (!category || !trimmedName) {
           alert('Please select a category and enter a product name.');
           return;
       }
-      if (category.products.find(p => p.name.toLowerCase() === trimmedName.toLowerCase())) {
+      if ((category.products || []).find(p => p.name.toLowerCase() === trimmedName.toLowerCase())) {
           alert('Product name already exists in this category.');
           return;
       }
@@ -161,8 +214,7 @@ export default function MenuManager() {
           return;
       }
 
-      // Generate a simple unique ID for the product
-      const newProdId = `${newProdCatId}-${trimmedName.toLowerCase().replace(/\s/g, '-')}`;
+      const newProdId = `${newProdCatId}-${slugify(trimmedName)}`;
       const newProduct = {
           id: newProdId,
           name: trimmedName,
@@ -174,19 +226,46 @@ export default function MenuManager() {
 
       const updatedCategories = menu.categories.map(c => {
           if (c.id === newProdCatId) {
-              return { ...c, products: [...c.products, newProduct] };
+              const existingProducts = c.products || []; 
+              return { ...c, products: [...existingProducts, newProduct] };
           }
           return c;
       });
-
-      setMenu(prev => ({ ...prev, categories: updatedCategories }));
       
-      // Clear form
+      const newMenuState = { ...menu, categories: updatedCategories };
+      
+      await commitChanges(newMenuState, `✅ New product "${trimmedName}" added and saved.`);
+      
       setNewProdName('');
       setNewProdPriceM('');
       setNewProdPriceL('');
       setNewProdCatId(''); 
   };
+
+  const handleDeleteProduct = async (catId, prodId, prodName) => {
+    if (!window.confirm("Are you sure you want to delete this flavor? This cannot be undone.")) return;
+
+    const updatedCategories = menu.categories.map(category => {
+        if (category.id === catId) {
+            const remainingProducts = (category.products || []).filter(product => product.id !== prodId);
+            return { ...category, products: remainingProducts };
+        }
+        return category;
+    });
+    const newMenuState = { ...menu, categories: updatedCategories };
+    
+    await commitChanges(newMenuState, `🗑️ Product "${prodName}" deleted and saved.`);
+  };
+
+  const handleDeleteCategory = async (catId, catName) => {
+    if (!window.confirm(`Are you sure you want to delete the entire category: ${catName}? This will remove all flavors inside it.`)) return;
+    
+    const remainingCategories = menu.categories.filter(category => category.id !== catId);
+    const newMenuState = { ...menu, categories: remainingCategories };
+
+    await commitChanges(newMenuState, `🗑️ Category "${catName}" deleted and saved.`);
+  };
+
 
   // 6. Render Loading/Error/Data
   if (loading || !menu) {
@@ -206,15 +285,6 @@ export default function MenuManager() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3>Prices & Add-ons</h3>
-          <button 
-              onClick={handleSaveMenu} 
-              disabled={isSaving} 
-              className="auth-button"
-              style={{ backgroundColor: 'var(--gold-accent)', color: 'var(--background-dark)' }}
-              title="Saves all changes below to Firestore"
-          >
-              <FiSave /> {isSaving ? 'Saving...' : 'Save All Changes'}
-          </button>
       </div>
 
       {saveStatus && (
@@ -226,24 +296,22 @@ export default function MenuManager() {
       {/* --- ADD NEW CATEGORY & PRODUCT SECTION --- */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
         
-        {/* Add New Category */}
-        <div className="add-new-form" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--background-light)' }}>
+        {/* Add New Series/Category */}
+        <div className="manager-form-container">
             <h3>New Series/Category</h3>
-            <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px' }}>Category Name (e.g., "Seasonal Smoothies")</label>
+            <div className="form-group-item">
+                <label>Category Name (e.g., "Seasonal Smoothies")</label>
                 <input 
                     type="text"
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
                     placeholder="Enter new category name"
-                    className="auth-form input"
-                    style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                    className="input-field"
                 />
             </div>
             <button 
                 onClick={handleAddNewCategory} 
-                className="auth-button" 
-                style={{ backgroundColor: 'var(--gold-accent)', color: 'var(--background-dark)', marginTop: '15px' }}
+                className="btn-add-action btn-add-primary"
                 disabled={!newCatName.trim()}
             >
                 + Add Category
@@ -251,66 +319,61 @@ export default function MenuManager() {
         </div>
 
         {/* Add New Product/Flavor */}
-        <div className="add-new-form" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--background-light)' }}>
+        <div className="manager-form-container">
             <h3>New Product/Flavor</h3>
-            <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px' }}>Select Category</label>
+            <div className="form-group-item">
+                <label>Select Category</label>
                 <select 
                     value={newProdCatId} 
                     onChange={(e) => setNewProdCatId(e.target.value)}
-                    className="auth-form input"
-                    style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                    className="input-field"
                 >
                     <option value="" disabled>Select a series...</option>
-                    {menu.categories.map(cat => (
+                    {(menu.categories || []).map(cat => (
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                 </select>
             </div>
 
-            <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px' }}>Product Name (e.g., "Ube Mango Swirl")</label>
+            <div className="form-group-item">
+                <label>Product Name (e.g., "Ube Mango Swirl")</label>
                 <input 
                     type="text"
                     value={newProdName}
                     onChange={(e) => setNewProdName(e.target.value)}
                     placeholder="Product name"
-                    className="auth-form input"
-                    style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                    className="input-field"
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                    <label style={{ display: 'block', marginBottom: '5px' }}>Medium Price (₱)</label>
+            <div className="form-inline-group">
+                <div className="form-group-item">
+                    <label>Medium Price (₱)</label>
                     <input
                         type="number"
                         step="0.01"
                         value={newProdPriceM}
                         onChange={(e) => setNewProdPriceM(e.target.value)}
                         placeholder="e.g., 58.00"
-                        className="auth-form input"
-                        style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                        className="input-field"
                     />
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
-                    <label style={{ display: 'block', marginBottom: '5px' }}>Large Price (₱)</label>
+                <div className="form-group-item">
+                    <label>Large Price (₱)</label>
                     <input
                         type="number"
                         step="0.01"
                         value={newProdPriceL}
                         onChange={(e) => setNewProdPriceL(e.target.value)}
                         placeholder="e.g., 68.00"
-                        className="auth-form input"
-                        style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                        className="input-field"
                     />
                 </div>
             </div>
 
             <button 
                 onClick={handleAddNewProduct} 
-                className="auth-button"
-                style={{ backgroundColor: '#0052cc', color: 'var(--text-primary)', marginTop: '15px' }}
+                className="btn-add-action btn-add-secondary"
                 disabled={!newProdCatId || !newProdName.trim() || (newProdPriceM <= 0 && newProdPriceL <= 0)}
             >
                 + Add Product
@@ -318,7 +381,42 @@ export default function MenuManager() {
         </div>
       </div>
       
-      {/* --- ADD-ONS PRICE MANAGEMENT --- */}
+      {/* --- ADD NEW ADD-ON FORM --- */}
+      <div className="manager-form-container">
+          <h3><FiPlus /> Add New Add-on</h3>
+          <div className="form-inline-group">
+              <div className="form-group-item" style={{ flex: 2 }}>
+                  <label>Add-on Name (e.g., "Boba Pearl")</label>
+                  <input 
+                      type="text"
+                      value={newAddonName}
+                      onChange={(e) => setNewAddonName(e.target.value)}
+                      placeholder="Enter new add-on name"
+                      className="input-field"
+                  />
+              </div>
+              <div className="form-group-item" style={{ flex: 1 }}>
+                  <label>Price (₱)</label>
+                  <input
+                      type="number"
+                      step="0.01"
+                      value={newAddonPrice}
+                      onChange={(e) => setNewAddonPrice(e.target.value)}
+                      placeholder="e.g., 10.00"
+                      className="input-field"
+                  />
+              </div>
+              <button 
+                  onClick={handleAddNewAddon} 
+                  className="btn-add-action btn-add-secondary"
+                  disabled={!newAddonName.trim() || isNaN(Number(newAddonPrice)) || Number(newAddonPrice) <= 0}
+              >
+                  + Add
+              </button>
+          </div>
+      </div>
+      
+      {/* --- ADD-ONS PRICE LIST TABLE --- */}
       <div className="table-box" style={{ marginBottom: '30px' }}>
         <h3>Add-ons Price List</h3>
         <table>
@@ -326,45 +424,56 @@ export default function MenuManager() {
             <tr>
               <th>Name</th>
               <th>Price (₱)</th>
-              <th>Actions</th> {/* ✅ Added Actions Column */}
+              <th>Actions</th> 
             </tr>
           </thead>
           <tbody>
-            {menu.addons.map((addon) => (
-              <tr key={addon.id}>
-                <td>{addon.name}</td>
-                <td>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={addon.price}
-                    onChange={(e) => handleAddonPriceChange(addon.id, e.target.value)}
-                    onBlur={handleSaveMenu} 
-                    className="input-field"
-                    style={{ width: '80px', textAlign: 'center', padding: '8px' }}
-                  />
-                </td>
-                <td>
-                  {/* For now, we are not deleting base add-ons, but the structure is here if needed */}
-                  <span style={{ color: 'var(--text-secondary)' }}>N/A</span>
-                </td>
-              </tr>
-            ))}
+            {(menu.addons || []).length > 0 ? (
+                (menu.addons || []).map((addon) => (
+                    <tr key={addon.id}>
+                        <td>{addon.name}</td>
+                        <td>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={addon.price}
+                                onChange={(e) => handleAddonPriceChange(addon.id, e.target.value)}
+                                onBlur={() => handlePriceUpdateSave(`✅ Price updated for ${addon.name}.`)} 
+                                className="input-field"
+                                style={{ width: '80px', textAlign: 'center' }}
+                            />
+                        </td>
+                        <td>
+                            <button
+                                onClick={() => handleDeleteAddon(addon.id, addon.name)}
+                                className="btn-delete-item"
+                                title={`Delete ${addon.name}`}
+                            >
+                                <FiTrash2 size={16} />
+                            </button>
+                        </td>
+                    </tr>
+                ))
+            ) : (
+                <tr>
+                    <td colSpan="3" className="no-data">No add-ons found. Use the form above to add one.</td>
+                </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* --- PRODUCTS PRICE MANAGEMENT --- */}
+      {/* --- PRODUCTS PRICE MANAGEMENT (Category list) --- */}
       {(menu.categories || []).map(category => ( 
         <div className="table-box" key={category.id} style={{ marginBottom: '30px' }}>
           
           {/* Category Header with Delete Button */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
+          <div className="category-manager-header">
             <h3>Category: {category.name}</h3>
             <button 
               onClick={() => handleDeleteCategory(category.id, category.name)}
-              className="auth-button"
-              style={{ backgroundColor: '#D32F2F', color: 'white', padding: '8px 12px', fontSize: '0.9rem' }}
+              className="btn-delete-item"
+              style={{ padding: '8px 12px' }}
               title={`Delete the entire ${category.name} category`}
             >
               <FiTrash2 /> Delete Category
@@ -377,11 +486,11 @@ export default function MenuManager() {
                 <th>Product Name</th>
                 <th>Medium Price (₱)</th>
                 <th>Large Price (₱)</th>
-                <th>Actions</th> {/* ✅ Added Actions Column */}
+                <th>Actions</th> 
               </tr>
             </thead>
             <tbody>
-              {(category.products || []).length > 0 ? ( 
+              {(category.products || []).length > 0 ? ( // ✅ FIX: Safely iterate over products
                 (category.products || []).map(product => (
                   <tr key={product.id}>
                     <td>{product.name}</td>
@@ -392,10 +501,10 @@ export default function MenuManager() {
                           step="0.01"
                           value={product.prices.medium === undefined ? '' : product.prices.medium}
                           onChange={(e) => handleProductPriceChange(category.id, product.id, 'medium', e.target.value)}
-                          onBlur={handleSaveMenu}
+                          onBlur={() => handlePriceUpdateSave(`✅ Price updated for ${product.name}.`)} // Save on blur
                           placeholder="N/A"
                           className="input-field"
-                          style={{ width: '80px', textAlign: 'center', padding: '8px' }}
+                          style={{ width: '80px', textAlign: 'center' }}
                         />
                       ) : 'N/A'}
                     </td>
@@ -406,22 +515,20 @@ export default function MenuManager() {
                           step="0.01"
                           value={product.prices.large === undefined ? '' : product.prices.large}
                           onChange={(e) => handleProductPriceChange(category.id, product.id, 'large', e.target.value)}
-                          onBlur={handleSaveMenu}
+                          onBlur={() => handlePriceUpdateSave(`✅ Price updated for ${product.name}.`)} // Save on blur
                           placeholder="N/A"
                           className="input-field"
-                          style={{ width: '80px', textAlign: 'center', padding: '8px' }}
+                          style={{ width: '80px', textAlign: 'center' }}
                         />
                       ) : 'N/A'}
                     </td>
                     <td>
-                      {/* ✅ Added Delete Product Button */}
                       <button
-                        onClick={() => handleDeleteProduct(category.id, product.id)}
-                        className="auth-button"
-                        style={{ backgroundColor: '#D32F2F', color: 'white', padding: '5px 10px', fontSize: '0.8rem' }}
+                        onClick={() => handleDeleteProduct(category.id, product.id, product.name)}
+                        className="btn-delete-item"
                         title={`Delete ${product.name}`}
                       >
-                        <FiTrash2 />
+                        <FiTrash2 size={16} />
                       </button>
                     </td>
                   </tr>

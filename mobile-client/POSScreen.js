@@ -8,13 +8,13 @@ import {
   StyleSheet, 
   Alert,
   Modal,
-  ScrollView
+  ActivityIndicator
 } from 'react-native';
 import { db } from './firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 
-import { menuData } from './menuData';
+import { useMenu } from './MenuContext'; 
 import ProductModal from './ProductModal';
 
 // Helper function to format prices
@@ -22,14 +22,25 @@ const formatPrice = (price) => `₱${price.toFixed(2)}`;
 
 const POSScreen = () => {
   const navigation = useNavigation();
-  const [activeCategory, setActiveCategory] = useState(menuData.categories[0].id);
+  const { menu, menuLoading } = useMenu(); 
+
+  const [activeCategory, setActiveCategory] = useState(null);
   const [cart, setCart] = useState([]);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  
+  // Set initial category once menu data is loaded
+  React.useEffect(() => {
+    if (!menuLoading && menu?.categories?.length && !activeCategory) {
+        setActiveCategory(menu.categories[0].id);
+    }
+  }, [menu, menuLoading, activeCategory]);
 
-  const foundCategory = menuData.categories.find(
+
+  // UPDATED: Use menu from context with safe access
+  const foundCategory = (menu?.categories || []).find(
     (cat) => cat.id === activeCategory
   );
   
@@ -174,6 +185,17 @@ const POSScreen = () => {
     </View>
   );
 
+  if (menuLoading || !menu) { 
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0052cc" />
+                <Text style={styles.loadingText}>Loading menu...</Text>
+            </View>
+        </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {selectedProduct && (
@@ -235,7 +257,7 @@ const POSScreen = () => {
       {/* Category List */}
       <View style={styles.categoriesContainer}>
         <FlatList
-          data={menuData.categories}
+          data={menu?.categories || []} // This usage is fine
           renderItem={renderCategory}
           keyExtractor={(item) => item.id}
           horizontal
@@ -279,6 +301,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4f5f7',
+  },
+  loadingContainer: { 
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#5e6c84',
+    fontSize: 16,
   },
   // Categories
   categoriesContainer: {

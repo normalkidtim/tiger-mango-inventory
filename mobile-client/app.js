@@ -1,3 +1,4 @@
+// mobile-client/app.js
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -10,6 +11,7 @@ import POSScreen from './POSScreen'; // Ordering System (now "Take Order")
 import PendingOrdersScreen from './PendingOrdersScreen'; // NEW: Pending Orders List
 import PurchaseHistoryScreen from './PurchaseHistoryScreen'; // NEW: Completed/Voided Orders
 import InventoryScreen from './InventoryScreen'; // NEW: Stock List
+import { MenuProvider } from './MenuContext'; // ✅ NEW: Import MenuProvider
 
 const Stack = createStackNavigator();
 
@@ -46,41 +48,43 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator 
-        initialRouteName="Main" // CHANGED: Start with the Main Screen
-        screenOptions={{ 
-          headerShown: true,
-          headerStyle: { backgroundColor: '#ffffff' },
-          headerTintColor: '#172b4d',
-          headerTitleStyle: { fontWeight: '600' },
-        }}
-      >
-        <Stack.Screen 
-          name="Main" 
-          component={MainScreen} 
-          options={{ title: 'Tiger Mango POS', headerTitleAlign: 'center' }}
-        />
-        <Stack.Screen 
-          name="TakeOrder" // NEW: Renamed POS to be more explicit in navigation
-          component={POSScreen} 
-          options={{ title: 'New Order' }}
-        />
-        <Stack.Screen 
-          name="PendingOrders" 
-          component={PendingOrdersScreen} 
-          options={{ title: 'Pending Orders' }}
-        />
-        <Stack.Screen 
-          name="PurchaseHistory" 
-          component={PurchaseHistoryScreen} 
-          options={{ title: 'Purchase History' }}
-        />
-        <Stack.Screen 
-          name="Inventory" 
-          component={InventoryScreen} 
-          options={{ title: 'Inventory' }}
-        />
-      </Stack.Navigator>
+      <MenuProvider> {/* ✅ WRAPPER ADDED */}
+        <Stack.Navigator 
+          initialRouteName="Main" // CHANGED: Start with the Main Screen
+          screenOptions={{ 
+            headerShown: true,
+            headerStyle: { backgroundColor: '#ffffff' },
+            headerTintColor: '#172b4d',
+            headerTitleStyle: { fontWeight: '600' },
+          }}
+        >
+          <Stack.Screen 
+            name="Main" 
+            component={MainScreen} 
+            options={{ title: 'Tiger Mango POS', headerTitleAlign: 'center' }}
+          />
+          <Stack.Screen 
+            name="TakeOrder" // NEW: Renamed POS to be more explicit in navigation
+            component={POSScreen} 
+            options={{ title: 'New Order' }}
+          />
+          <Stack.Screen 
+            name="PendingOrders" 
+            component={PendingOrdersScreen} 
+            options={{ title: 'Pending Orders' }}
+          />
+          <Stack.Screen 
+            name="PurchaseHistory" 
+            component={PurchaseHistoryScreen} 
+            options={{ title: 'Purchase History' }}
+          />
+          <Stack.Screen 
+            name="Inventory" 
+            component={InventoryScreen} 
+            options={{ title: 'Inventory' }}
+          />
+        </Stack.Navigator>
+      </MenuProvider>
     </NavigationContainer>
   );
 }

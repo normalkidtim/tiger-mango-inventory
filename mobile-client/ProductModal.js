@@ -5,13 +5,35 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Modal, 
-  ScrollView 
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
-import { menuData } from './menuData';
+import { useMenu } from './MenuContext'; // Using the MenuContext for live data
 
 const formatPrice = (price) => `₱${price.toFixed(2)}`;
 
 const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
+  const { menu, menuLoading } = useMenu(); 
+
+  // Handle case where menu data is loading
+  if (menuLoading || !menu) {
+    return (
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={isVisible}
+        >
+            <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#0052cc" />
+            </View>
+        </Modal>
+    );
+  }
+  
+  // Safely get add-ons from the loaded menu data
+  // Note: This relies on your Firebase config/menu document having the "addons" key.
+  const menuAddons = menu?.addons || []; 
+
   const availableSizes = Object.keys(product.prices);
   
   const [selectedSize, setSelectedSize] = useState(availableSizes[0]);
@@ -32,7 +54,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
     );
   };
 
-  // ✅ New logic for quantity controls
   const handleIncreaseQuantity = () => {
     setQuantity(prev => prev + 1);
   };
@@ -40,7 +61,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
   const handleDecreaseQuantity = () => {
     setQuantity(prev => (prev > 1 ? prev - 1 : 1));
   };
-  // END new logic
 
   const handleSubmit = () => {
     const customizedProduct = {
@@ -48,8 +68,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
       name: product.name,
       categoryName: product.categoryName || 'Uncategorized',
       size: selectedSize,
-      // REMOVED: sugar: selectedSugar,
-      // REMOVED: ice: selectedIce,
       addons: selectedAddons,
       quantity: quantity,
       basePrice: product.prices[selectedSize],
@@ -102,34 +120,37 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
               </View>
             )}
 
-            {/* Add-ons Selector */}
-            <View style={styles.modalGroup}>
-              <Text style={styles.modalGroupTitle}>Add-ons</Text>
-              <View style={styles.modalOptionsGrid}>
-                {menuData.addons.map((addon) => {
-                  const isActive = selectedAddons.find(a => a.id === addon.id);
-                  return (
-                    <TouchableOpacity
-                      key={addon.id}
-                      style={[
-                        styles.modalOptionBtn, 
-                        isActive && styles.modalOptionBtnActive
-                      ]}
-                      onPress={() => handleAddonToggle(addon)}
-                    >
-                      <Text style={[styles.modalOptionText, isActive && styles.modalOptionTextActive]}>
-                        {addon.name}
-                      </Text>
-                      <Text style={[styles.modalOptionPrice, isActive && styles.modalOptionPriceActive]}>
-                        + {formatPrice(addon.price)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+            {/* ✅ ADD-ONS SELECTOR (This section is guaranteed to be rendered correctly now) */}
+            {menuAddons.length > 0 && ( 
+              <View style={styles.modalGroup}>
+                <Text style={styles.modalGroupTitle}>Add-ons</Text>
+                <View style={styles.modalOptionsGrid}>
+                  {menuAddons.map((addon) => { 
+                    // Check if the add-on is currently selected
+                    const isActive = selectedAddons.find(a => a.id === addon.id);
+                    return (
+                      <TouchableOpacity
+                        key={addon.id}
+                        style={[
+                          styles.modalOptionBtn, 
+                          isActive && styles.modalOptionBtnActive
+                        ]}
+                        onPress={() => handleAddonToggle(addon)}
+                      >
+                        <Text style={[styles.modalOptionText, isActive && styles.modalOptionTextActive]}>
+                          {addon.name}
+                        </Text>
+                        <Text style={[styles.modalOptionPrice, isActive && styles.modalOptionPriceActive]}>
+                          + {formatPrice(addon.price)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
+            )}
             
-            {/* ✅ New: Quantity Selector */}
+            {/* Quantity Selector */}
             <View style={styles.modalGroup}>
               <Text style={styles.modalGroupTitle}>Quantity</Text>
               <View style={styles.quantityControl}>
@@ -151,7 +172,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
                 </TouchableOpacity>
               </View>
             </View>
-            {/* End New: Quantity Selector */}
 
           </ScrollView>
 
@@ -286,7 +306,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // ✅ New Quantity Control Styles
+  // Quantity Control Styles
   quantityControl: {
     flexDirection: 'row',
     justifyContent: 'center',
