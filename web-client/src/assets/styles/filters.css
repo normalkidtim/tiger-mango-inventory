@@ -11,6 +11,32 @@
   margin-bottom: 24px;
 }
 
+/* NEW: Style for the status filter bar */
+.status-filter-bar {
+    justify-content: flex-start;
+}
+.btn-filter {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.btn-filter:hover {
+    background-color: rgba(229, 57, 53, 0.1);
+    color: var(--primary-brand);
+    border-color: var(--primary-brand);
+}
+.btn-filter.btn-active {
+    background-color: var(--primary-brand);
+    color: var(--background-dark);
+    border-color: var(--primary-brand);
+}
+
 .filter-group {
   display: flex;
   align-items: center;

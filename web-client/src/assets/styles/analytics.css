@@ -1,0 +1,165 @@
+/* web-client/src/assets/styles/analytics.css */
+
+.analytics-page {
+    /* Base style */
+}
+
+/* --- Stats Grid --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.stat-card {
+    background: var(--background-dark);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    border-left: 5px solid var(--stat-color, var(--primary-brand)); /* Dynamic color border */
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.stat-icon {
+    color: white;
+    padding: 12px;
+    border-radius: 6px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.stat-icon svg {
+    width: 24px;
+    height: 24px;
+}
+.stat-content {
+    flex-grow: 1;
+}
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.stat-title {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* --- Charts Section --- */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.chart-card {
+    background: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    min-height: 380px;
+}
+.chart-card h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--border-color);
+}
+.chart-card.wide {
+    grid-column: span 2;
+}
+
+/* Recharts Tooltip Styling (Adjusted for theme) */
+.recharts-default-tooltip {
+  background-color: var(--background-dark) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.recharts-tooltip-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+.recharts-tooltip-item {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+
+/* --- Ranking Lists --- */
+.ranking-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+.ranking-card {
+    background: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.ranking-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary-brand);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--border-color);
+}
+.ranking-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+.ranking-list {
+    list-style: none;
+    padding: 0;
+}
+.ranking-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.ranking-list li:before {
+    content: counter(item);
+    counter-increment: item;
+    font-weight: 700;
+    color: var(--primary-brand);
+    margin-right: 10px;
+}
+.ranking-list {
+    counter-reset: item;
+}
+.ranking-list li:last-child {
+    border-bottom: none;
+}
+.ranking-count {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+.ranking-list li.no-data-item {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    border-bottom: none;
+}
+.ranking-list li.no-data-item:before {
+    content: none;
+}

@@ -10,7 +10,9 @@ import './assets/styles/sidebar.css';
 import './assets/styles/inventory.css';
 import './assets/styles/tables.css';
 import './assets/styles/auth.css';
-import './assets/styles/filters.css'; // ✅ Ensure filters.css is loaded for button styles
+import './assets/styles/filters.css'; 
+import './assets/styles/analytics.css';
+import './assets/styles/admin.css'; // NEW: Import Admin Panel CSS
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

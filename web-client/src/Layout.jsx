@@ -1,7 +1,8 @@
 import React from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit } from "react-icons/fi"; // ✅ NEW: Import FiEdit
+// FiUsers added for Admin Panel
+import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit, FiBarChart2, FiUsers } from "react-icons/fi"; 
 
 export default function Layout() {
   const { logout, currentUser } = useAuth();
@@ -23,8 +24,15 @@ export default function Layout() {
           <NavLink to="/" className="sidebar-link"><FiGrid /> Inventory</NavLink>
           <NavLink to="/purchase-history" className="sidebar-link"><FiShoppingCart /> Purchase History</NavLink>
           <NavLink to="/stock-logs" className="sidebar-link"><FiFileText /> Stock Logs</NavLink>
-          {/* ✅ NEW: Menu Manager Link */}
-          <NavLink to="/menu-manager" className="sidebar-link"><FiEdit /> Menu Manager</NavLink>
+          {(currentUser?.role === 'admin' || currentUser?.role === 'manager') && (
+              <NavLink to="/menu-manager" className="sidebar-link"><FiEdit /> Menu Manager</NavLink>
+          )}
+          <NavLink to="/analytics" className="sidebar-link"><FiBarChart2 /> Sales Analytics</NavLink> 
+          
+          {/* NEW: Admin Panel Link - Only visible to Admins */}
+          {currentUser?.role === 'admin' && (
+              <NavLink to="/admin-panel" className="sidebar-link"><FiUsers /> Admin Panel</NavLink>
+          )}
         </nav>
         <div className="sidebar-bottom">
           {currentUser && <p className="sidebar-user">{currentUser.displayName || currentUser.email}</p>}
