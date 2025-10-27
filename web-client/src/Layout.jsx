@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { FiGrid, FiFileText, FiLogOut, FiShoppingCart } from "react-icons/fi";
+import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit } from "react-icons/fi"; // ✅ NEW: Import FiEdit
 
 export default function Layout() {
   const { logout, currentUser } = useAuth();
@@ -21,9 +21,10 @@ export default function Layout() {
         </div>
         <nav className="sidebar-nav">
           <NavLink to="/" className="sidebar-link"><FiGrid /> Inventory</NavLink>
-          {/* ✅ Added the new link here */}
           <NavLink to="/purchase-history" className="sidebar-link"><FiShoppingCart /> Purchase History</NavLink>
           <NavLink to="/stock-logs" className="sidebar-link"><FiFileText /> Stock Logs</NavLink>
+          {/* ✅ NEW: Menu Manager Link */}
+          <NavLink to="/menu-manager" className="sidebar-link"><FiEdit /> Menu Manager</NavLink>
         </nav>
         <div className="sidebar-bottom">
           {currentUser && <p className="sidebar-user">{currentUser.displayName || currentUser.email}</p>}

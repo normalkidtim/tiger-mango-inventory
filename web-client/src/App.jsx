@@ -6,6 +6,7 @@ import Login from './Login';
 import Inventory from './pages/Inventory';
 import StockLogs from './pages/StockLogs';
 import PurchaseHistory from './pages/PurchaseHistory';
+import MenuManager from './pages/MenuManager'; // ✅ NEW IMPORT
 
 function ProtectedRoutes() {
   const { currentUser } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/" element={<Inventory />} />
         <Route path="/purchase-history" element={<PurchaseHistory />} />
         <Route path="/stock-logs" element={<StockLogs />} />
+        <Route path="/menu-manager" element={<MenuManager />} /> {/* ✅ NEW ROUTE */}
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />
