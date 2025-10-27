@@ -41,7 +41,7 @@ const FLAT_LID_CATEGORIES = [
   'milktea', 
   'iced-coffee', 
   'fruit-tea', 
-  'soda', // ✅ Corrected from soda-series
+  'soda', 
   'milk-series', 
   'latte-series', 
   'non-coffee', 
@@ -61,7 +61,7 @@ const BOBA_STRAW_CATEGORIES = [
 ];
 const THIN_STRAW_CATEGORIES = [
   'iced-coffee', 
-  'soda', // ✅ Corrected from soda-series
+  'soda', 
   'latte-series', 
   'non-coffee'
 ];
@@ -196,7 +196,8 @@ const PendingOrdersScreen = () => {
   const handleUpdateOrderStatus = (orderId, newStatus, orderItems) => {
     Alert.alert(
       `${newStatus} Order?`,
-      `Are you sure you want to set order ${orderId.substring(0, 5)}... as ${newStatus}?`,
+      // FIX 1: Removed order ID from the confirmation message
+      `Are you sure you want to set this order as ${newStatus}?`, 
       [
         { text: "Cancel", style: "cancel" },
         { text: newStatus, onPress: async () => {
@@ -219,14 +220,15 @@ const PendingOrdersScreen = () => {
                 });
             }
 
-            Alert.alert("Success", `Order ${orderId.substring(0, 5)}... has been ${newStatus.toLowerCase()}.`);
+            // FIX 2: Removed order ID from the success message
+            Alert.alert("Success", `Order has been ${newStatus.toLowerCase()}.`);
 
           } catch (error) {
             console.error(`Error updating order status to ${newStatus}:`, error);
             // Show detailed error if it's an inventory issue
             const errorMessage = error.message.includes('Insufficient stock') 
                 ? error.message 
-                : `Failed to ${newStatus.toLowerCase()} order. Please check the console.`;
+                : `Failed to ${newStatus.toLowerCase()} order. Please try again.`;
             Alert.alert("Error", errorMessage);
           }
         }},
@@ -241,7 +243,9 @@ const PendingOrdersScreen = () => {
     return (
       <View style={styles.orderCard}>
         <View style={styles.orderHeader}>
-          <Text style={styles.orderId}>Order ID: {order.id.substring(0, 8)}</Text>
+          {/* FIX 3: Removed Order ID display from the card */}
+          {/* <Text style={styles.orderId}>Order ID: {order.id.substring(0, 8)}</Text> */}
+          <View /> {/* Empty view to keep space distributed if needed */}
           <Text style={styles.orderTime}><Ionicons name="time-outline" size={14} color={COLORS.darkGray} /> {timestamp}</Text>
         </View>
         

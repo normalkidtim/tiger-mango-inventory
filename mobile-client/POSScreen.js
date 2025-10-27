@@ -4,12 +4,12 @@ import {
   Text, 
   TouchableOpacity, 
   FlatList, 
-  SafeAreaView, 
   StyleSheet, 
   Alert,
   Modal,
   ActivityIndicator
 } from 'react-native';
+import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context'; 
 import { db } from './firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
@@ -31,15 +31,12 @@ const POSScreen = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   
-  // Set initial category once menu data is loaded
   React.useEffect(() => {
     if (!menuLoading && menu?.categories?.length && !activeCategory) {
         setActiveCategory(menu.categories[0].id);
     }
   }, [menu, menuLoading, activeCategory]);
 
-
-  // UPDATED: Use menu from context with safe access
   const foundCategory = (menu?.categories || []).find(
     (cat) => cat.id === activeCategory
   );
@@ -112,8 +109,6 @@ const POSScreen = () => {
     }
   };
 
-  // --- Render Functions for Lists ---
-
   const renderCategory = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -166,7 +161,6 @@ const POSScreen = () => {
           {item.quantity}x {item.name} ({item.size})
         </Text>
         <Text style={styles.cartItemCategory}>{item.categoryName}</Text>
-        {/* REMOVED: Sugar and Ice display from cart item */}
         {item.addons.length > 0 && (
           <Text style={styles.cartItemAddons}>
             + {item.addons.map(a => a.name).join(', ')}
@@ -187,17 +181,17 @@ const POSScreen = () => {
 
   if (menuLoading || !menu) { 
     return (
-        <SafeAreaView style={styles.container}>
+        <RNSafeAreaView style={styles.container}>
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#0052cc" />
                 <Text style={styles.loadingText}>Loading menu...</Text>
             </View>
-        </SafeAreaView>
+        </RNSafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <RNSafeAreaView style={styles.container} edges={['left', 'right', 'top']}>
       {selectedProduct && (
         <ProductModal
           product={selectedProduct}
@@ -207,7 +201,7 @@ const POSScreen = () => {
         />
       )}
 
-      {/* Cart Modal */}
+      {/* Cart Modal (no change) */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -235,65 +229,75 @@ const POSScreen = () => {
               }
             />
             
-            <View style={styles.cartSummary}>
-              <View style={styles.cartTotal}>
-                <Text style={styles.cartTotalText}>Total</Text>
-                <Text style={styles.cartTotalText}>{formatPrice(cartTotal)}</Text>
+            {/* Cart Summary Wrapper fixed with RNSafeAreaView */}
+            <RNSafeAreaView edges={['bottom']} style={styles.cartSummaryWrapper}>
+              <View style={styles.cartSummary}>
+                <View style={styles.cartTotal}>
+                  <Text style={styles.cartTotalText}>Total</Text>
+                  <Text style={styles.cartTotalText}>{formatPrice(cartTotal)}</Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.cartPayButton, (cart.length === 0 || isPlacingOrder) && styles.cartPayButtonDisabled]} 
+                  onPress={handlePlaceOrder}
+                  disabled={cart.length === 0 || isPlacingOrder}
+                >
+                  <Text style={styles.cartPayButtonText}>
+                    {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity 
-                style={[styles.cartPayButton, (cart.length === 0 || isPlacingOrder) && styles.cartPayButtonDisabled]} 
-                onPress={handlePlaceOrder}
-                disabled={cart.length === 0 || isPlacingOrder}
-              >
-                <Text style={styles.cartPayButtonText}>
-                  {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            </RNSafeAreaView>
+
           </View>
         </View>
       </Modal>
 
-      {/* Category List */}
-      <View style={styles.categoriesContainer}>
+      {/* Main content wrapper */}
+      <View style={styles.mainContent}>
+        {/* Category List */}
+        <View style={styles.categoriesContainer}>
+          <FlatList
+            data={menu?.categories || []} 
+            renderItem={renderCategory}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesList}
+          />
+        </View>
+
+        {/* Product Grid */}
         <FlatList
-          data={menu?.categories || []} // This usage is fine
-          renderItem={renderCategory}
+          data={activeProducts}
+          renderItem={renderProduct}
           keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesList}
+          numColumns={2}
+          style={styles.productGrid}
+          contentContainerStyle={styles.productGridContent}
+          ListEmptyComponent={
+            <Text style={styles.cartEmptyMessage}>No products in this category.</Text>
+          }
         />
       </View>
-
-      {/* Product Grid */}
-      <FlatList
-        data={activeProducts}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        style={styles.productGrid}
-        contentContainerStyle={styles.productGridContent}
-        ListEmptyComponent={
-          <Text style={styles.cartEmptyMessage}>No products in this category.</Text>
-        }
-      />
       
-      {/* Cart Footer Button */}
-      <View style={styles.cartFooter}>
-        <TouchableOpacity 
-          style={styles.cartFooterButton}
-          onPress={() => setIsCartModalOpen(true)}
-        >
-          <Text style={styles.cartFooterButtonText}>
-            View Cart ({cartItemCount})
-          </Text>
-          <Text style={styles.cartFooterButtonText}>
-            {formatPrice(cartTotal)}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      {/* Cart Footer Button Wrapper fixed with RNSafeAreaView */}
+      <RNSafeAreaView edges={['bottom']} style={styles.cartFooterWrapper}>
+        <View style={styles.cartFooter}>
+          <TouchableOpacity 
+            style={styles.cartFooterButton}
+            onPress={() => setIsCartModalOpen(true)}
+          >
+            <Text style={styles.cartFooterButtonText}>
+              View Cart ({cartItemCount})
+            </Text>
+            <Text style={styles.cartFooterButtonText}>
+              {formatPrice(cartTotal)}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </RNSafeAreaView>
+      
+    </RNSafeAreaView>
   );
 };
 
@@ -301,6 +305,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4f5f7',
+    paddingTop: 0, // Ensure no padding top from the main container
+  },
+  mainContent: {
+    flex: 1,
   },
   loadingContainer: { 
     flex: 1,
@@ -318,9 +326,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#dfe1e6',
+    // FIX: Ensure no top margin is pushing it down
+    marginTop: 0, 
   },
   categoriesList: {
-    paddingVertical: 10,
+    // FIX: Reduced vertical padding to pull content closer to the top
+    paddingVertical: 5, 
     paddingHorizontal: 8,
   },
   categoryButton: {
@@ -371,6 +382,9 @@ const styles = StyleSheet.create({
     color: '#5e6c84',
   },
   // Cart Footer Button
+  cartFooterWrapper: {
+    backgroundColor: '#ffffff', 
+  },
   cartFooter: {
     padding: 16,
     backgroundColor: '#ffffff',
@@ -460,7 +474,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#5e6c84',
   },
-  // REMOVED: cartItemMods style rule
   cartItemAddons: {
     fontSize: 13,
     color: '#5e6c84',
@@ -476,7 +489,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#172b4d',
-    marginTop: 2,
   },
   cartItemRemove: {
     backgroundColor: '#f4f5f7',
@@ -493,6 +505,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   // Cart Summary (in Modal)
+  cartSummaryWrapper: {
+    backgroundColor: '#f4f5f7', 
+  },
   cartSummary: {
     padding: 20,
     borderTopWidth: 1,

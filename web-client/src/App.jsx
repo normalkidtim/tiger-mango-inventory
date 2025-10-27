@@ -9,13 +9,13 @@ import PurchaseHistory from './pages/PurchaseHistory';
 import MenuManager from './pages/MenuManager'; 
 import Analytics from './pages/Analytics';
 import AdminPanel from './pages/AdminPanel'; 
+import CreateUser from './pages/CreateUser'; // NEW IMPORT
 
 // Component to wrap all protected routes with the Layout
 function ProtectedRoutes() {
   const { currentUser } = useAuth();
   
   if (!currentUser) {
-    // If no user is logged in, redirect to login
     return <Navigate to="/login" />;
   }
 
@@ -26,7 +26,7 @@ function ProtectedRoutes() {
 export default function App() {
   const { currentUser } = useAuth(); 
 
-  // Function to determine if user has Manager or Admin role
+  // Check roles once here
   const isManagerOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'manager';
   const isAdmin = currentUser?.role === 'admin';
   
@@ -56,6 +56,10 @@ export default function App() {
         <Route 
           path="/admin-panel" 
           element={isAdmin ? <AdminPanel /> : <Navigate to="/" />}
+        />
+        <Route 
+          path="/create-user" // NEW ROUTE
+          element={isAdmin ? <CreateUser /> : <Navigate to="/" />}
         />
         
         {/* Fallback route */}

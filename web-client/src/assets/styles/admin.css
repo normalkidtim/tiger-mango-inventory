@@ -98,6 +98,42 @@
     color: var(--text-primary); 
 }
 
+/* NEW: Password Change Section Styles */
+.password-change-section {
+    padding: 15px;
+    margin-top: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--background-light);
+}
+.password-change-section h4 {
+    font-size: 1rem;
+    color: var(--primary-brand);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.password-change-section .btn-password {
+    background-color: #0065ff; /* Use accent blue for password action */
+    color: white;
+    height: 35px;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+.password-change-section .btn-password:hover {
+    background-color: #0052cc;
+}
+
+/* Small error message inside the card */
+.error-message-small {
+    color: var(--primary-brand);
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+
 /* Role Badge */
 .role-badge {
     padding: 3px 8px;
@@ -157,7 +193,7 @@
     background-color: #0052cc;
 }
 
-/* NEW: Delete Button */
+/* Delete Button */
 .read-only-actions .btn-delete {
     background-color: #D32F2F; /* A safe red for delete */
     color: white;

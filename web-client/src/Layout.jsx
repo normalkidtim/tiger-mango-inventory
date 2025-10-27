@@ -1,8 +1,8 @@
 import React from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-// FiUsers added for Admin Panel
-import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit, FiBarChart2, FiUsers } from "react-icons/fi"; 
+// FiUserPlus added for the new page
+import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit, FiBarChart2, FiUsers, FiUserPlus } from "react-icons/fi"; 
 
 export default function Layout() {
   const { logout, currentUser } = useAuth();
@@ -29,9 +29,13 @@ export default function Layout() {
           )}
           <NavLink to="/analytics" className="sidebar-link"><FiBarChart2 /> Sales Analytics</NavLink> 
           
-          {/* NEW: Admin Panel Link - Only visible to Admins */}
+          {/* Admin Links - Only visible to Admins */}
           {currentUser?.role === 'admin' && (
+            <>
               <NavLink to="/admin-panel" className="sidebar-link"><FiUsers /> Admin Panel</NavLink>
+              {/* NEW: Create User Link */}
+              <NavLink to="/create-user" className="sidebar-link"><FiUserPlus /> Create User</NavLink>
+            </>
           )}
         </nav>
         <div className="sidebar-bottom">

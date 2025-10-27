@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-// ✅ Import the new tools for auth persistence
+// ✅ Import the required persistence tools
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage'; // Re-import AsyncStorage
 
 const firebaseConfig = {
   apiKey: "AIzaSyAMqdQMw5xNo_JyVP453x13_gGcxvPZdnc",
@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// ✅ Initialize Auth with persistence
+// ✅ CHANGE: Initialize Auth with getReactNativePersistence to make the login persistent
 initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 });

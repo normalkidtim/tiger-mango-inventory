@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; 
+import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context'; 
 import { db } from './firebase'; 
 import { collection, onSnapshot, query } from 'firebase/firestore'; 
 
@@ -27,7 +27,6 @@ const InventoryCard = ({ title, data, iconName }) => {
   // Sort items alphabetically for consistent display
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  // FIX: Used 'square-outline' as a fallback icon
   const icon = iconName || (title.toLowerCase().includes('cup') ? 'md-cup-outline' : 'square-outline');
 
   return (
@@ -49,7 +48,6 @@ const InventoryCard = ({ title, data, iconName }) => {
             <Text style={styles.itemStock}>{item.stock.toLocaleString()}</Text>
           </View>
         )) : (
-          // This Text component was already correct, but retaining it for context
           <Text style={styles.noData}>No items loaded in this category.</Text>
         )}
       </View>
@@ -98,7 +96,8 @@ const InventoryScreen = () => {
 
 
   return (
-    <SafeAreaView style={globalStyles.container}> 
+    // Only set horizontal safe areas, allowing content to go up to the header
+    <RNSafeAreaView style={styles.container} edges={['left', 'right']}> 
       <Text style={styles.screenTitle}>Inventory Stock</Text>
       
       {loading ? (
@@ -118,29 +117,35 @@ const InventoryScreen = () => {
               />
             ))
           ) : (
-            // ✅ FIX APPLIED HERE: Ensure the fallback message is inside <Text>
             <Text style={styles.noDataMessage}>
                 No inventory categories found. Please add them via the Web Client Inventory page.
             </Text>
           )}
         </ScrollView>
       )}
-    </SafeAreaView>
+    </RNSafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   screenTitle: {
     fontSize: FONTS.h2.fontSize,
     fontWeight: FONTS.h2.fontWeight,
     color: COLORS.text,
-    padding: SIZES.padding,
+    paddingHorizontal: SIZES.padding,
+    // FIX: Removed most vertical padding, keeping only a small divider
+    paddingVertical: 10, 
     textAlign: 'center',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray,
   },
   scrollContainer: {
-    padding: SIZES.padding,
+    paddingHorizontal: SIZES.padding, 
+    paddingVertical: 0, // FIX: Remove ScrollView's top padding
     paddingBottom: 50, // extra padding for bottom content
   },
   loadingContainer: {

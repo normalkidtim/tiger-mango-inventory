@@ -3,41 +3,74 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth'; 
+// NEW IMPORTS: For fetching user profile
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
-import './firebase'; // This initializes Firebase
-import MainScreen from './MainScreen'; // NEW: Main Menu
-import POSScreen from './POSScreen'; // Ordering System (now "Take Order")
-import PendingOrdersScreen from './PendingOrdersScreen'; // NEW: Pending Orders List
-import PurchaseHistoryScreen from './PurchaseHistoryScreen'; // NEW: Completed/Voided Orders
-import InventoryScreen from './InventoryScreen'; // NEW: Stock List
-import { MenuProvider } from './MenuContext'; // ✅ NEW: Import MenuProvider
+import './firebase'; 
+import LoginScreen from './LoginScreen'; 
+import MainScreen from './MainScreen'; 
+import POSScreen from './POSScreen'; 
+import PendingOrdersScreen from './PendingOrdersScreen'; 
+import PurchaseHistoryScreen from './PurchaseHistoryScreen'; 
+import InventoryScreen from './InventoryScreen'; 
+import { MenuProvider } from './MenuContext'; 
 
 const Stack = createStackNavigator();
+const db = getFirestore();
+
+// Helper function to fetch the user's detailed profile from Firestore
+async function fetchUserProfile(user) {
+    if (!user || user.isAnonymous) return null;
+
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    
+    if (userDoc.exists()) {
+        const userData = userDoc.data();
+        return {
+            ...user,
+            ...userData,
+            fullName: `${userData.firstName} ${userData.lastName}`,
+            role: userData.role
+        };
+    } 
+    return null; // Profile doesn't exist
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
+  // NEW: State for the detailed user profile (including name/role)
+  const [userProfile, setUserProfile] = useState(null); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (userCredential) => {
+    const unsubscribe = onAuthStateChanged(auth, async (userCredential) => {
+      
       if (userCredential) {
-        setUser(userCredential);
+        // If an Auth user is present, fetch their complete profile
+        const profile = await fetchUserProfile(userCredential);
+        
+        if (profile) {
+            // User is authenticated and has a valid Firestore profile
+            setUserProfile(profile);
+        } else {
+            // User authenticated but profile deleted by admin -> force logout
+            console.warn("Mobile: User authenticated but profile not found. Logging out.");
+            await auth.signOut();
+            setUserProfile(null);
+        }
       } else {
-        // Sign in anonymously if no user
-        signInAnonymously(auth).catch((error) => {
-          console.error("Anonymous sign-in error:", error);
-        });
+        setUserProfile(null);
       }
+      
       setLoading(false);
     });
     
-    return unsubscribe; // Cleanup on unmount
+    return unsubscribe; 
   }, []);
 
   if (loading) {
-    // Loading screen while connecting to Firebase
     return (
       <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color="#0052cc" />
@@ -45,12 +78,18 @@ export default function App() {
       </View>
     );
   }
+  
+  // RENDER LOGIN: If userProfile is null, show the login screen.
+  if (!userProfile) {
+    return <LoginScreen />;
+  }
 
+  // RENDER MAIN APP: Pass the userProfile data to MainScreen
   return (
     <NavigationContainer>
-      <MenuProvider> {/* ✅ WRAPPER ADDED */}
+      <MenuProvider>
         <Stack.Navigator 
-          initialRouteName="Main" // CHANGED: Start with the Main Screen
+          initialRouteName="Main"
           screenOptions={{ 
             headerShown: true,
             headerStyle: { backgroundColor: '#ffffff' },
@@ -60,11 +99,12 @@ export default function App() {
         >
           <Stack.Screen 
             name="Main" 
-            component={MainScreen} 
+            // Pass the userProfile object to MainScreen
+            children={(props) => <MainScreen {...props} userProfile={userProfile} />} 
             options={{ title: 'Tiger Mango POS', headerTitleAlign: 'center' }}
           />
           <Stack.Screen 
-            name="TakeOrder" // NEW: Renamed POS to be more explicit in navigation
+            name="TakeOrder" 
             component={POSScreen} 
             options={{ title: 'New Order' }}
           />
