@@ -22,10 +22,27 @@ export default function MenuManager() {
   const [newProdCatId, setNewProdCatId] = useState('');
   const [newProdPriceM, setNewProdPriceM] = useState('');
   const [newProdPriceL, setNewProdPriceL] = useState('');
+  // NEW STATES FOR RECIPE
+  const [newProdLidType, setNewProdLidType] = useState(''); 
+  const [newProdStrawType, setNewProdStrawType] = useState(''); 
   
   // States for Add-on Form
   const [newAddonName, setNewAddonName] = useState('');
   const [newAddonPrice, setNewAddonPrice] = useState('');
+
+  // --- CONFIGURATION CONSTANTS (Matching Inventory Keys) ---
+  const LID_OPTIONS = [
+    { value: 'flat-lid', label: 'Flat Lid' },
+    { value: 'dome-lid', label: 'Dome Lid' },
+    { value: 'none', label: 'No Lid (e.g., Hot Drink)' },
+  ];
+  
+  const STRAW_OPTIONS = [
+    { value: 'boba-straw', label: 'Boba/Thick Straw' },
+    { value: 'thin-straw', label: 'Thin/Regular Straw' },
+    { value: 'none', label: 'No Straw' },
+  ];
+  // --------------------------------------------------------
 
 
   // 1. Fetch menu data from Firestore (Source of Truth)
@@ -208,9 +225,16 @@ export default function MenuManager() {
       
       const priceM = Number(newProdPriceM);
       const priceL = Number(newProdPriceL);
+      const lidType = newProdLidType; // Capture new fields
+      const strawType = newProdStrawType; // Capture new fields
 
       if ((priceM <= 0 || isNaN(priceM)) && (priceL <= 0 || isNaN(priceL))) {
           alert('At least one price (Medium or Large) must be greater than zero.');
+          return;
+      }
+      
+      if (!lidType || !strawType) {
+          alert('Please select a Lid Type and a Straw Type for the recipe.');
           return;
       }
 
@@ -218,6 +242,10 @@ export default function MenuManager() {
       const newProduct = {
           id: newProdId,
           name: trimmedName,
+          // NEW FIELDS START - Always save the selected value if the form was successfully submitted
+          ...(lidType && { lidType }), 
+          ...(strawType && { strawType }), 
+          // NEW FIELDS END
           prices: {}
       };
 
@@ -240,6 +268,9 @@ export default function MenuManager() {
       setNewProdPriceM('');
       setNewProdPriceL('');
       setNewProdCatId(''); 
+      // Reset new fields
+      setNewProdLidType(''); 
+      setNewProdStrawType(''); 
   };
 
   const handleDeleteProduct = async (catId, prodId, prodName) => {
@@ -318,9 +349,9 @@ export default function MenuManager() {
             </button>
         </div>
 
-        {/* Add New Product/Flavor */}
+        {/* Add New Product/Flavor - MODIFIED */}
         <div className="manager-form-container">
-            <h3>New Product/Flavor</h3>
+            <h3>New Product/Flavor (with Recipe)</h3>
             <div className="form-group-item">
                 <label>Select Category</label>
                 <select 
@@ -345,6 +376,37 @@ export default function MenuManager() {
                     className="input-field"
                 />
             </div>
+
+            {/* NEW FIELD: Lid Type */}
+            <div className="form-group-item">
+                <label>Lid Type (for Inventory Deduction) *</label>
+                <select 
+                    value={newProdLidType} 
+                    onChange={(e) => setNewProdLidType(e.target.value)}
+                    className="input-field"
+                >
+                    <option value="" disabled>Select lid type...</option>
+                    {LID_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
+            </div>
+
+            {/* NEW FIELD: Straw Type */}
+            <div className="form-group-item">
+                <label>Straw Type (for Inventory Deduction) *</label>
+                <select 
+                    value={newProdStrawType} 
+                    onChange={(e) => setNewProdStrawType(e.target.value)}
+                    className="input-field"
+                >
+                    <option value="" disabled>Select straw type...</option>
+                    {STRAW_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
+            </div>
+
 
             <div className="form-inline-group">
                 <div className="form-group-item">
@@ -374,7 +436,7 @@ export default function MenuManager() {
             <button 
                 onClick={handleAddNewProduct} 
                 className="btn-add-action btn-add-secondary"
-                disabled={!newProdCatId || !newProdName.trim() || (newProdPriceM <= 0 && newProdPriceL <= 0)}
+                disabled={!newProdCatId || !newProdName.trim() || !newProdLidType || !newProdStrawType || (newProdPriceM <= 0 && newProdPriceL <= 0)}
             >
                 + Add Product
             </button>

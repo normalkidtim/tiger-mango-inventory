@@ -63,6 +63,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
   };
 
   const handleSubmit = () => {
+    // BUG FIX: Pass the new recipe fields from the product (menu item) into the cart item object
     const customizedProduct = {
       id: product.id,
       name: product.name,
@@ -72,6 +73,9 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
       quantity: quantity,
       basePrice: product.prices[selectedSize],
       finalPrice: finalPrice,
+      // PASS RECIPE FIELDS DIRECTLY - Fixes missing recipe in order item
+      lidType: product.lidType, 
+      strawType: product.strawType,
     };
     onClose(); 
     onAddToCart(customizedProduct);

@@ -1,3 +1,5 @@
+// mobile-client/PendingOrdersScreen.js
+
 import React, { useEffect, useState } from 'react';
 import { 
   View, 
@@ -93,25 +95,61 @@ const updateInventory = async (orderId, orderItems) => {
         // This must match the ID used in the deduction categories list
         const categoryId = getCategoryId(item.categoryName); 
 
-        // Cup Deduction
+        // Cup Deduction (UNMODIFIED - Always deducts the cup)
         const cupKey = `${size}-cup`; 
         deductions.cups[cupKey] = (deductions.cups[cupKey] || 0) + quantity;
 
-        // Lid Deduction
-        if (DOME_LID_CATEGORIES.includes(categoryId)) {
-            deductions.lids['dome-lid'] = (deductions.lids['dome-lid'] || 0) + quantity;
-        } else if (FLAT_LID_CATEGORIES.includes(categoryId)) {
-            deductions.lids['flat-lid'] = (deductions.lids['flat-lid'] || 0) + quantity;
-        }
+        // Lid Deduction (MODIFIED LOGIC: Check item-specific recipe first)
+        let lidToDeduct = null;
         
-        // Straw Deduction
-        if (BOBA_STRAW_CATEGORIES.includes(categoryId)) {
-            deductions.straws['boba-straw'] = (deductions.straws['boba-straw'] || 0) + quantity;
-        } else if (THIN_STRAW_CATEGORIES.includes(categoryId)) {
-            deductions.straws['thin-straw'] = (deductions.straws['thin-straw'] || 0) + quantity;
+        // 1. Check for product-specific recipe (new feature)
+        // We check for the presence of the property, NOT just if it's truthy (to handle 'none' which is a saved string)
+        if (Object.prototype.hasOwnProperty.call(item, 'lidType')) { 
+             // Only set for deduction if the recipe is NOT 'none' or null/undefined
+             if (item.lidType && item.lidType !== 'none') {
+                lidToDeduct = item.lidType;
+             }
+        } 
+        // 2. Fallback to existing category-based logic (for old items that lack the property)
+        else {
+            if (DOME_LID_CATEGORIES.includes(categoryId)) {
+                lidToDeduct = 'dome-lid';
+            } else if (FLAT_LID_CATEGORIES.includes(categoryId)) {
+                lidToDeduct = 'flat-lid';
+            }
         }
 
-        // Add-ons Deduction
+        // Only deduct if a valid lid type key is set
+        if (lidToDeduct) {
+            deductions.lids[lidToDeduct] = (deductions.lids[lidToDeduct] || 0) + quantity;
+        }
+        
+        // Straw Deduction (MODIFIED LOGIC: Check item-specific recipe first)
+        let strawToDeduct = null;
+        
+        // 1. Check for product-specific recipe (new feature)
+        // We check for the presence of the property, NOT just if it's truthy (to handle 'none' which is a saved string)
+        if (Object.prototype.hasOwnProperty.call(item, 'strawType')) { 
+             // Only set for deduction if the recipe is NOT 'none' or null/undefined
+            if (item.strawType && item.strawType !== 'none') {
+                strawToDeduct = item.strawType;
+            }
+        }
+        // 2. Fallback to existing category-based logic (for old items that lack the property)
+        else {
+            if (BOBA_STRAW_CATEGORIES.includes(categoryId)) {
+                strawToDeduct = 'boba-straw';
+            } else if (THIN_STRAW_CATEGORIES.includes(categoryId)) {
+                strawToDeduct = 'thin-straw';
+            }
+        }
+
+        // Only deduct if a valid straw type key is set
+        if (strawToDeduct) {
+            deductions.straws[strawToDeduct] = (deductions.straws[strawToDeduct] || 0) + quantity;
+        }
+
+        // Add-ons Deduction (UNMODIFIED)
         if (item.addons && item.addons.length > 0) {
             item.addons.forEach(addon => {
                 const addonKey = addon.id;
@@ -151,9 +189,9 @@ const updateInventory = async (orderId, orderItems) => {
 
         // Apply strict deduction to all categories
         performDeduction(currentCups, newCups, deductions.cups, 'Cup');
-        performDeduction(currentLids, newLids, deductions.lids, 'Lid'); 
-        performDeduction(currentStraws, newStraws, deductions.straws, 'Straw'); 
-        performDeduction(currentAddons, newAddons, deductions.addons, 'Add-on');
+        performDeduction(newLids, newLids, deductions.lids, 'Lid'); 
+        performDeduction(newStraws, newStraws, deductions.straws, 'Straw'); 
+        performDeduction(newAddons, newAddons, deductions.addons, 'Add-on');
 
 
         // 3. Commit all changes

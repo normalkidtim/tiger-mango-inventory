@@ -2,7 +2,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { FiBarChart2, FiDollarSign, FiAward, FiCoffee } from "react-icons/fi";
+// Updated imports: FiDollarSign removed, FiTrendingUp for generic sales icon
+import { FiBarChart2, FiAward, FiCoffee, FiTrendingUp } from "react-icons/fi"; 
 import {
   LineChart,
   Line,
@@ -68,21 +69,23 @@ const useSalesData = () => {
     const startOfYear = new Date(today.getFullYear(), 0, 1);
     
     const sales = {
-      daily: { total: 0, orders: 0, data: [] },         // Daily breakdown (for chart)
-      weekly: { total: 0, orders: 0, data: new Map() },  // Weekly breakdown (for chart)
-      monthly: { total: 0, orders: 0 },                  // Monthly total (for stat card)
-      yearly: { total: 0, orders: 0, data: new Map() },  // Yearly breakdown (by year for current month)
-      monthlyMoM: new Map(),                             // Monthly MoM breakdown (NEW chart data)
+      // Removed 'daily.data' since it is replaced by 'hourly' breakdown now
+      daily: { total: 0, orders: 0 },         
+      weekly: { total: 0, orders: 0, data: new Map() },  
+      monthly: { total: 0, orders: 0 },                  
+      yearly: { total: 0, orders: 0, data: new Map() },  
+      monthlyMoM: new Map(),                             
     };
     
     const productSales = new Map();
     const addonSales = new Map();
+    const hourlySalesMap = new Map(); // NEW: Map to hold sales aggregated by hour
 
     allCompletedOrders.forEach(order => {
       const date = order.completedAt;
       const total = order.totalPrice || 0;
       
-      // 1. Calculate Aggregate Sales Totals
+      // 1. Calculate Aggregate Sales Totals 
       if (date >= today && date <= endOfDay) {
         sales.daily.total += total;
         sales.daily.orders += 1;
@@ -102,10 +105,10 @@ const useSalesData = () => {
 
       // 2. Populate data for charts
       
-      // Daily Breakdown (by day of month)
-      if (date >= startOfMonth) {
-        const dayKey = date.getDate(); // 1 to 31
-        sales.daily.data.push({ day: dayKey, sales: total });
+      // MODIFIED: Hourly Breakdown (for today only)
+      if (date >= today && date <= endOfDay) {
+          const hourKey = date.getHours(); // 0 to 23
+          hourlySalesMap.set(hourKey, (hourlySalesMap.get(hourKey) || 0) + total);
       }
 
       // Weekly Breakdown (by weekday)
@@ -142,28 +145,24 @@ const useSalesData = () => {
 
     // --- Format Chart Data ---
     
-    // Daily Breakdown (Current Month)
-    const dailySalesMap = new Map();
-    sales.daily.data.forEach(d => {
-        dailySalesMap.set(d.day, (dailySalesMap.get(d.day) || 0) + d.sales);
-    });
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const formattedDailyData = Array.from({ length: daysInMonth }, (_, i) => {
-        const day = i + 1;
+    // NEW: Hourly Breakdown (Current Day)
+    const formattedHourlyData = Array.from({ length: 24 }, (_, i) => {
+        const hour = i;
+        const hourLabel = `${hour < 10 ? '0' : ''}${hour}:00`;
         return { 
-            name: `Day ${day}`, 
-            Sales: dailySalesMap.get(day) || 0 
+            name: hourLabel, 
+            Sales: hourlySalesMap.get(hour) || 0 
         };
     });
 
-    // Weekly Breakdown (Sun-Sat)
+    // Weekly Breakdown (Sun-Sat) 
     const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const formattedWeeklyData = dayOrder.map(day => ({
         name: day, 
         Sales: sales.weekly.data.get(day) || 0 
     }));
     
-    // Monthly MoM (Last 12 months)
+    // Monthly MoM (Last 12 months) - NO LONGER USED, BUT KEEPING FOR REFERENCE IF NEEDED
     const monthlyMoMChartData = [];
     const todayYear = today.getFullYear();
     const todayMonth = today.getMonth();
@@ -206,9 +205,9 @@ const useSalesData = () => {
 
     return {
       sales,
-      dailyChartData: formattedDailyData,
+      hourlyChartData: formattedHourlyData, 
       weeklyChartData: formattedWeeklyData,
-      monthlyMoMChartData: monthlyMoMChartData, 
+      monthlyMoMChartData: monthlyMoMChartData, // Retained but not used in the chart below
       yearlyChartData: formattedYearlyData,
       topProducts,
       topAddons,
@@ -219,7 +218,7 @@ const useSalesData = () => {
 };
 
 
-// --- RENDER COMPONENTS (No change from previous response) ---
+// --- RENDER COMPONENTS ---
 
 const StatCard = ({ title, value, icon, color }) => (
     <div className="stat-card" style={{ borderColor: color, '--stat-color': color }}>
@@ -269,9 +268,8 @@ export default function Analytics() {
 
   const { 
     sales, 
-    dailyChartData, 
+    hourlyChartData, 
     weeklyChartData, 
-    monthlyMoMChartData, 
     yearlyChartData, 
     topProducts, 
     topAddons 
@@ -285,6 +283,8 @@ export default function Analytics() {
   // Format currencies for display
   const formatCurrency = (value) => `₱${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  const SalesIcon = <FiTrendingUp size={24} />; 
+
   return (
     <div className="analytics-page">
       <div className="page-header"><FiBarChart2 /><h2>Sales Analytics</h2></div>
@@ -295,39 +295,40 @@ export default function Analytics() {
         <StatCard 
           title="Today's Sales" 
           value={formatCurrency(todaySales)} 
-          icon={<FiDollarSign size={24} />}
+          icon={SalesIcon} 
           color="#E53935" // Red
         />
         <StatCard 
           title="Weekly Sales" 
           value={formatCurrency(weekSales)} 
-          icon={<FiDollarSign size={24} />}
+          icon={SalesIcon} 
           color="#FFD700" // Gold
         />
         <StatCard 
           title="Monthly Sales" 
           value={formatCurrency(monthSales)} 
-          icon={<FiDollarSign size={24} />}
+          icon={SalesIcon} 
           color="#388E3C" // Green
         />
         <StatCard 
           title="Yearly Sales" 
           value={formatCurrency(yearSales)} 
-          icon={<FiDollarSign size={24} />}
+          icon={SalesIcon} 
           color="#0065ff" // Blue
         />
       </div>
       
-      {/* --- 2. Charts Section (4 Charts in 2x2 Grid) --- */}
-      <div className="charts-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+      {/* --- 2. Charts Section (4 Charts in 1x4 Grid) --- */}
+      {/* gridTemplateColumns: '1fr' ensures 1 chart per row */}
+      <div className="charts-grid" style={{ gridTemplateColumns: '1fr' }}>
         
-        {/* Daily Sales Chart (Current Month Breakdown) */}
+        {/* 1. Hourly Sales Chart (Current Day Breakdown) */}
         <div className="chart-card">
-          <h3>Daily Sales (Current Month Breakdown)</h3>
+          <h3>Hourly Sales (Today's Breakdown)</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dailyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <BarChart data={hourlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#dfe1e6" />
-              <XAxis dataKey="name" stroke="#5e6c84" interval="preserveStartEnd" minTickGap={30}/>
+              <XAxis dataKey="name" stroke="#5e6c84" interval={1} minTickGap={1}/> 
               <YAxis tickFormatter={(value) => `₱${value}`} stroke="#5e6c84" />
               <Tooltip formatter={(value) => [formatCurrency(value), 'Sales']} />
               <Bar dataKey="Sales" fill="#E53935" />
@@ -335,7 +336,7 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* Weekly Sales Chart (Current Week Breakdown) */}
+        {/* 2. Weekly Sales Chart (Current Week Breakdown) */}
         <div className="chart-card">
           <h3>Weekly Sales (Daily Breakdown)</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -349,33 +350,20 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* Monthly Sales Chart (MoM - Last 12 Months) */}
+        {/* 3. MODIFIED: Monthly Sales Chart (Current Year Breakdown: Jan to Dec) */}
         <div className="chart-card">
-          <h3>Monthly Sales (Last 12 Months)</h3>
+          <h3>Monthly Sales (Current Year: Jan to Dec)</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyMoMChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            {/* CHANGED TO BAR CHART */}
+            <BarChart data={yearlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#dfe1e6" />
               <XAxis dataKey="name" stroke="#5e6c84" />
               <YAxis tickFormatter={(value) => `₱${value}`} stroke="#5e6c84" />
               <Tooltip formatter={(value) => [formatCurrency(value), 'Sales']} />
-              <Legend />
-              <Line type="monotone" dataKey="Sales" stroke="#388E3C" strokeWidth={2} activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {/* Yearly Sales Chart (Current Year by Month) */}
-        <div className="chart-card">
-          <h3>Yearly Sales (Current Year Breakdown)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={yearlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#dfe1e6" />
-              <XAxis dataKey="name" stroke="#5e6c84" />
-              <YAxis tickFormatter={(value) => `₱${value}`} stroke="#5e6c84" />
-              <Tooltip formatter={(value) => [formatCurrency(value), 'Sales']} />
-              <Legend />
-              <Line type="monotone" dataKey="Sales" stroke="#0065ff" strokeWidth={2} activeDot={{ r: 8 }} />
-            </LineChart>
+              <Legend /> 
+              {/* CHANGED FROM LINE TO BAR */}
+              <Bar dataKey="Sales" fill="#388E3C" /> 
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
