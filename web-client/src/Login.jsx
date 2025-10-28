@@ -28,7 +28,7 @@ export default function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2 className="auth-title">Tealicieux Web Client</h2>
+        <h2 className="auth-title">Tealicieux</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
