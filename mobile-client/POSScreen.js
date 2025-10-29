@@ -82,8 +82,29 @@ const POSScreen = () => {
     setIsPlacingOrder(true);
 
     try {
+      // Clean the cart items before placing the order to remove the temporary 'cartId' and ensure no undefined values are sent.
+      const cleanedItems = cart.map(item => {
+        // Use a temporary object and explicitly define/clean values
+        const cleanedItem = {
+          id: item.id || 'unknown',
+          name: item.name || 'Unknown Product',
+          categoryName: item.categoryName || 'Uncategorized',
+          size: item.size || 'N/A',
+          addons: item.addons || [],
+          quantity: item.quantity || 1,
+          basePrice: item.basePrice || 0,
+          finalPrice: item.finalPrice || 0,
+          // Ensure these two recipe fields are present but use null if undefined to avoid Firebase error
+          lidType: item.lidType === undefined ? null : item.lidType, 
+          strawType: item.strawType === undefined ? null : item.strawType,
+        };
+        // Remove 'cartId' property if it exists, otherwise return the cleaned item
+        const { cartId, ...itemToSave } = cleanedItem;
+        return itemToSave;
+      });
+      
       const newOrder = {
-        items: cart.map(({ cartId, ...rest }) => rest), // Remove cartId before saving to DB
+        items: cleanedItems,
         totalPrice: cartTotal,
         createdAt: serverTimestamp(),
         status: 'Pending', 
@@ -163,7 +184,7 @@ const POSScreen = () => {
         <Text style={styles.cartItemCategory}>{item.categoryName}</Text>
         {item.addons.length > 0 && (
           <Text style={styles.cartItemAddons}>
-            + {item.addons.map(a => a.name).join(', ')}
+            + {item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}
           </Text>
         )}
       </View>
@@ -326,12 +347,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#dfe1e6',
-    // FIX: Ensure no top margin is pushing it down
     marginTop: 0, 
   },
   categoriesList: {
-    // FIX: Reduced vertical padding to pull content closer to the top
-    paddingVertical: 5, 
+    // FIXED: Apply minimal vertical padding here and remove margins from buttons
+    paddingVertical: 8, 
     paddingHorizontal: 8,
   },
   categoryButton: {
@@ -340,6 +360,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#f4f5f7',
     marginHorizontal: 4,
+    // REMOVED vertical margins (marginTop/marginBottom)
   },
   categoryButtonActive: {
     backgroundColor: '#0052cc',

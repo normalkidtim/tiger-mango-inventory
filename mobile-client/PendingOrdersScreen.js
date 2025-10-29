@@ -149,11 +149,14 @@ const updateInventory = async (orderId, orderItems) => {
             deductions.straws[strawToDeduct] = (deductions.straws[strawToDeduct] || 0) + quantity;
         }
 
-        // Add-ons Deduction (UNMODIFIED)
+        // Add-ons Deduction (MODIFIED to use addon's individual quantity)
         if (item.addons && item.addons.length > 0) {
             item.addons.forEach(addon => {
                 const addonKey = addon.id;
-                deductions.addons[addonKey] = (deductions.addons[addonKey] || 0) + quantity;
+                // FIX: Deduct Product Quantity * Addon Quantity
+                const totalAddonQty = (item.quantity || 1) * (addon.quantity || 1);
+                
+                deductions.addons[addonKey] = (deductions.addons[addonKey] || 0) + totalAddonQty;
             });
         }
     });
@@ -298,7 +301,10 @@ const PendingOrdersScreen = () => {
                         <Text style={styles.itemName}>{item.quantity}x {item.name} ({item.size})</Text>
                     </View>
                     {item.addons && item.addons.length > 0 && (
-                        <Text style={styles.itemAddons}>+{item.addons.map(a => a.name).join(', ')}</Text>
+                        // MODIFIED to show add-on quantity
+                        <Text style={styles.itemAddons}>
+                            +{item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}
+                        </Text>
                     )}
                 </View>
             ))}

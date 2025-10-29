@@ -8,7 +8,7 @@ import {
   ScrollView,
   ActivityIndicator
 } from 'react-native';
-import { useMenu } from './MenuContext'; // Using the MenuContext for live data
+import { useMenu } from './MenuContext'; 
 
 const formatPrice = (price) => `₱${price.toFixed(2)}`;
 
@@ -30,28 +30,51 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
     );
   }
   
-  // Safely get add-ons from the loaded menu data
-  // Note: This relies on your Firebase config/menu document having the "addons" key.
   const menuAddons = menu?.addons || []; 
-
   const availableSizes = Object.keys(product.prices);
   
   const [selectedSize, setSelectedSize] = useState(availableSizes[0]);
+  // MODIFIED: selectedAddons now stores { id, name, price, quantity: 1 }
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [quantity, setQuantity] = useState(1); 
 
   const finalPrice = useMemo(() => {
     const basePrice = product.prices[selectedSize];
-    const addonsPrice = selectedAddons.reduce((total, addon) => total + addon.price, 0);
+    
+    // MODIFIED: Calculate addonsPrice using individual addon quantity
+    const addonsPrice = selectedAddons.reduce((total, addon) => 
+        total + (addon.price * addon.quantity)
+    , 0);
+    
     return (basePrice + addonsPrice) * quantity;
   }, [selectedSize, selectedAddons, quantity, product.prices]);
 
+  const handleAddonQuantityChange = (addon, delta) => {
+      setSelectedAddons(prev => {
+          const existing = prev.find(a => a.id === addon.id);
+          if (!existing) return prev; 
+
+          const newQuantity = Math.max(1, existing.quantity + delta);
+          
+          return prev.map(a =>
+              a.id === addon.id ? { ...a, quantity: newQuantity } : a
+          );
+      });
+  };
+
+  // MODIFIED: Toggles selection and sets default quantity to 1
   const handleAddonToggle = (addon) => {
-    setSelectedAddons((prev) =>
-      prev.find((a) => a.id === addon.id)
-        ? prev.filter((a) => a.id !== addon.id)
-        : [...prev, addon]
-    );
+    setSelectedAddons((prev) => {
+      const isSelected = prev.find((a) => a.id === addon.id);
+      
+      if (isSelected) {
+        // Remove addon
+        return prev.filter((a) => a.id !== addon.id);
+      } else {
+        // Add addon with default quantity of 1
+        return [...prev, { ...addon, quantity: 1 }];
+      }
+    });
   };
 
   const handleIncreaseQuantity = () => {
@@ -69,7 +92,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
       name: product.name,
       categoryName: product.categoryName || 'Uncategorized',
       size: selectedSize,
-      addons: selectedAddons,
+      // MODIFIED: selectedAddons array now correctly contains addon quantity
+      addons: selectedAddons, 
       quantity: quantity,
       basePrice: product.prices[selectedSize],
       finalPrice: finalPrice,
@@ -102,12 +126,13 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
             {availableSizes.length > 1 && (
               <View style={styles.modalGroup}>
                 <Text style={styles.modalGroupTitle}>Size</Text>
-                <View style={styles.modalOptionsGrid}>
+                {/* MODIFIED: Size buttons use columns3 to encourage wrapping on smaller screens */}
+                <View style={[styles.modalOptionsGrid, styles.columns3]}> 
                   {availableSizes.map((size) => (
                     <TouchableOpacity
                       key={size}
                       style={[
-                        styles.modalOptionBtn, 
+                        styles.modalOptionBtnSize, // Use new style for size buttons
                         selectedSize === size && styles.modalOptionBtnActive
                       ]}
                       onPress={() => setSelectedSize(size)}
@@ -124,29 +149,67 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
               </View>
             )}
 
-            {/* ✅ ADD-ONS SELECTOR (This section is guaranteed to be rendered correctly now) */}
+            {/* ✅ ADD-ONS SELECTOR (Modified for reliable touch area) */}
             {menuAddons.length > 0 && ( 
               <View style={styles.modalGroup}>
                 <Text style={styles.modalGroupTitle}>Add-ons</Text>
                 <View style={styles.modalOptionsGrid}>
                   {menuAddons.map((addon) => { 
                     // Check if the add-on is currently selected
-                    const isActive = selectedAddons.find(a => a.id === addon.id);
+                    const isSelected = selectedAddons.find(a => a.id === addon.id);
+                    const selectedAddon = isSelected ? selectedAddons.find(a => a.id === addon.id) : null;
+                    const addonQuantity = selectedAddon?.quantity || 0;
+                    
                     return (
-                      <TouchableOpacity
+                      // FIX: Changed this back to a TouchableOpacity, removed addonTouchArea, and added zIndex
+                      <TouchableOpacity 
                         key={addon.id}
                         style={[
-                          styles.modalOptionBtn, 
-                          isActive && styles.modalOptionBtnActive
+                          styles.modalOptionBtnAddon,
+                          isSelected && styles.modalOptionBtnActive,
+                          { zIndex: 10 } // Ensure high touch priority
                         ]}
-                        onPress={() => handleAddonToggle(addon)}
+                        onPress={() => handleAddonToggle(addon)} // Toggle selection on tap
+                        activeOpacity={0.8}
                       >
-                        <Text style={[styles.modalOptionText, isActive && styles.modalOptionTextActive]}>
-                          {addon.name}
-                        </Text>
-                        <Text style={[styles.modalOptionPrice, isActive && styles.modalOptionPriceActive]}>
-                          + {formatPrice(addon.price)}
-                        </Text>
+                          {/* FIX: Ensure addonInfoArea covers all text fields and takes up available space */}
+                          <View style={styles.addonInfoArea}>
+                              <Text style={[styles.modalOptionText, isSelected && styles.modalOptionTextActive]}>
+                                {addon.name}
+                              </Text>
+                              <Text style={[styles.modalOptionPrice, isSelected && styles.modalOptionPriceActive]}>
+                                + {formatPrice(addon.price)}
+                              </Text>
+                          </View>
+                          
+                          {isSelected ? (
+                              // Allow users to adjust quantity by tapping the buttons without toggling the parent selection
+                              <View style={styles.addonQuantityControl} onStartShouldSetResponder={() => true}>
+                                  {/* Decrement Button */}
+                                  <TouchableOpacity
+                                      style={styles.addonQuantityButton}
+                                      // FIX: Use e.stopPropagation if necessary, but onStartShouldSetResponder is often enough
+                                      onPress={(e) => { e.stopPropagation(); handleAddonQuantityChange(addon, -1); }}
+                                      disabled={addonQuantity === 1}
+                                  >
+                                      <Text style={styles.addonQuantityButtonText}>-</Text>
+                                  </TouchableOpacity>
+                                  
+                                  {/* Quantity Display */}
+                                  <Text style={styles.addonQuantityText}>{addonQuantity}</Text>
+                                  
+                                  {/* Increment Button */}
+                                  <TouchableOpacity
+                                      style={styles.addonQuantityButton}
+                                      onPress={(e) => { e.stopPropagation(); handleAddonQuantityChange(addon, 1); }}
+                                  >
+                                      <Text style={styles.addonQuantityButtonText}>+</Text>
+                                  </TouchableOpacity>
+                              </View>
+                          ) : (
+                              // Placeholder for alignment when not selected
+                              <View style={styles.addonQuantityControlPlaceholder} /> 
+                          )}
                       </TouchableOpacity>
                     );
                   })}
@@ -156,7 +219,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isVisible }) => {
             
             {/* Quantity Selector */}
             <View style={styles.modalGroup}>
-              <Text style={styles.modalGroupTitle}>Quantity</Text>
+              <Text style={styles.modalGroupTitle}>Quantity (Product)</Text>
               <View style={styles.quantityControl}>
                 <TouchableOpacity
                   style={styles.quantityButton}
@@ -246,27 +309,39 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     margin: -6,
   },
-  columns3: {
-    // This is handled by flexWrap, but you could adjust child basis if needed
-  },
-  modalOptionBtn: {
-    flexBasis: '46%', // Two columns with gap
+  modalOptionBtnSize: {
+    flexBasis: '46%', 
     margin: 6,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 16, 
     backgroundColor: '#f4f5f7',
     borderWidth: 2,
     borderColor: '#f4f5f7',
     borderRadius: 5,
   },
-  modalOptionBtnSingle: {
-    justifyContent: 'center',
+  // KEY FIX: This is now the outer TouchableOpacity
+  modalOptionBtnAddon: {
+    flexBasis: '46%', 
+    margin: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 8, 
+    backgroundColor: '#f4f5f7',
+    borderWidth: 2,
+    borderColor: '#f4f5f7',
+    borderRadius: 5,
   },
   modalOptionBtnActive: {
     backgroundColor: '#e6f0ff',
     borderColor: '#0052cc',
+  },
+  // NEW: Area for Addon Name/Price, ensures it takes up available space
+  addonInfoArea: {
+    flex: 1, 
+    padding: 8,
   },
   modalOptionText: {
     fontSize: 15,
@@ -280,6 +355,8 @@ const styles = StyleSheet.create({
   modalOptionPrice: {
     fontWeight: '600',
     color: '#42526e',
+    fontSize: 13,
+    marginTop: 4,
   },
   modalOptionPriceActive: {
     color: '#0052cc',
@@ -345,6 +422,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#172b4d',
   },
+  // NEW ADDON QUANTITY STYLES
+  addonQuantityControl: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#dfe1e6',
+    width: 90, // Fixed width for controls
+    height: 35,
+    overflow: 'hidden',
+    marginLeft: 10,
+  },
+  addonQuantityControlPlaceholder: {
+    width: 90,
+    height: 35,
+    marginLeft: 10,
+  },
+  addonQuantityButton: {
+    width: 30,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f4f5f7',
+  },
+  addonQuantityButtonText: {
+    fontSize: 18,
+    color: '#0052cc',
+    fontWeight: '600',
+  },
+  addonQuantityText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#172b4d',
+  }
 });
 
 export default ProductModal;
