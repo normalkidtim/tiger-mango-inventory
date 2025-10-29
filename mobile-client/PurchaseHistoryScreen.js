@@ -1,3 +1,5 @@
+// mobile-client/PurchaseHistoryScreen.js
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { 
   View, 
@@ -60,6 +62,7 @@ const PurchaseHistoryScreen = () => {
   const renderHistoryItem = ({ item: order }) => {
     const timestamp = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-US') : 'N/A';
     const time = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString('en-US') : '';
+    const cashierName = order.cashier || 'N/A'; // Get cashier name
     
     const statusStyle = order.status === 'Voided' ? styles.voidStatus : styles.completedStatus;
     const statusIcon = order.status === 'Voided' ? 'alert-circle-outline' : 'checkmark-circle-outline';
@@ -77,6 +80,12 @@ const PurchaseHistoryScreen = () => {
           </Text>
         </View>
         
+        {/* NEW: Cashier Row */}
+        <View style={styles.contentRow}>
+            <Text style={styles.cashierText}>Cashier:</Text> 
+            <Text style={styles.cashierNameValue}>{cashierName}</Text>
+        </View>
+        
         <View style={styles.contentRow}>
             <Text style={styles.orderTotalText}>Total Price:</Text>
             <Text style={styles.orderTotalValue}>{formatPrice(order.totalPrice)}</Text>
@@ -91,7 +100,8 @@ const PurchaseHistoryScreen = () => {
                         <Text style={styles.itemName}>{item.quantity}x {item.name} ({item.size})</Text>
                     </View>
                     {item.addons && item.addons.length > 0 && (
-                        <Text style={styles.itemAddons}>+{item.addons.map(a => a.name).join(', ')}</Text>
+                        // MODIFIED: Show quantity for each add-on
+                        <Text style={styles.itemAddons}>+{item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}</Text>
                     )}
                 </View>
             ))}
@@ -245,6 +255,17 @@ const styles = StyleSheet.create({
       justifyContent: 'space-between',
       marginBottom: 5,
       marginTop: 5,
+  },
+  // NEW styles for Cashier display
+  cashierText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  cashierNameValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
   },
   orderTotalText: {
       fontSize: 16,

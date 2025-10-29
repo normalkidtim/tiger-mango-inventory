@@ -77,7 +77,8 @@ const useSalesData = () => {
       monthlyMoM: new Map(),                             
     };
     
-    const productSales = new Map();
+    const productSales = new Map(); // Key: categoryName-name (ignores size)
+    const productDisplayNameMap = new Map(); // Key: categoryName-name, Value: "Name (Category)"
     const addonSales = new Map();
     const hourlySalesMap = new Map(); // NEW: Map to hold sales aggregated by hour
 
@@ -129,16 +130,21 @@ const useSalesData = () => {
       
       // 3. Calculate Product/Add-on Ranking
       (order.items || []).forEach(item => {
-        const productKey = `${item.categoryName}-${item.name} (${item.size})`;
+        // MODIFIED: Aggregate products by category and name (IGNORING SIZE)
+        const productAggregationKey = `${item.categoryName}-${item.name}`; 
+        const productDisplayName = `${item.name} (${item.categoryName})`;
         const productQty = item.quantity;
         
         // Product Sales
-        productSales.set(productKey, (productSales.get(productKey) || 0) + productQty);
+        productSales.set(productAggregationKey, (productSales.get(productAggregationKey) || 0) + productQty);
+        productDisplayNameMap.set(productAggregationKey, productDisplayName); // Save the display name for later
 
         // Add-on Sales
         (item.addons || []).forEach(addon => {
           const addonKey = addon.name;
-          addonSales.set(addonKey, (addonSales.get(addonKey) || 0) + productQty);
+          // IMPORTANT: Use the individual add-on quantity multiplied by the item quantity
+          const totalAddonQty = (addon.quantity || 1) * productQty;
+          addonSales.set(addonKey, (addonSales.get(addonKey) || 0) + totalAddonQty);
         });
       });
     });
@@ -181,8 +187,9 @@ const useSalesData = () => {
     }
 
     // Yearly Breakdown (Current Year by Month)
+    // FIX: Define monthOrder array here to resolve ReferenceError
     const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const formattedYearlyData = monthOrder.map((month, index) => {
+    const yearlyChartData = monthOrder.map((month, index) => {
         const monthKey = `${today.getFullYear()}-${index}`;
         return { 
             name: month, 
@@ -191,24 +198,28 @@ const useSalesData = () => {
     });
 
 
-    // Top Products
+    // MODIFIED: Top Products - Use display name map and slice to 5
     const topProducts = Array.from(productSales.entries())
-      .map(([name, quantity]) => ({ name: getDisplayName(name), quantity }))
+      .map(([key, quantity]) => ({ 
+          // Use the clean display name: "Name (Category)"
+          name: productDisplayNameMap.get(key) || key, 
+          quantity 
+      }))
       .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 3);
+      .slice(0, 5); // <--- Changed to 5
 
-    // Top Add-ons
+    // MODIFIED: Top Add-ons - Slice to 5
     const topAddons = Array.from(addonSales.entries())
       .map(([name, quantity]) => ({ name: getDisplayName(name), quantity }))
       .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 3);
+      .slice(0, 5); // <--- Changed to 5
 
     return {
       sales,
       hourlyChartData: formattedHourlyData, 
       weeklyChartData: formattedWeeklyData,
       monthlyMoMChartData: monthlyMoMChartData, // Retained but not used in the chart below
-      yearlyChartData: formattedYearlyData,
+      yearlyChartData: yearlyChartData, 
       topProducts,
       topAddons,
     };
@@ -350,33 +361,31 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* 3. MODIFIED: Monthly Sales Chart (Current Year Breakdown: Jan to Dec) */}
+        {/* 3. Monthly Sales Chart (Current Year Breakdown: Jan to Dec) */}
         <div className="chart-card">
           <h3>Monthly Sales (Current Year: Jan to Dec)</h3>
           <ResponsiveContainer width="100%" height={300}>
-            {/* CHANGED TO BAR CHART */}
-            <BarChart data={yearlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <BarChart data={yearlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}> 
               <CartesianGrid strokeDasharray="3 3" stroke="#dfe1e6" />
               <XAxis dataKey="name" stroke="#5e6c84" />
               <YAxis tickFormatter={(value) => `₱${value}`} stroke="#5e6c84" />
               <Tooltip formatter={(value) => [formatCurrency(value), 'Sales']} />
               <Legend /> 
-              {/* CHANGED FROM LINE TO BAR */}
               <Bar dataKey="Sales" fill="#388E3C" /> 
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
       
-      {/* --- 3. Ranking Lists (Top 3 of each) --- */}
+      {/* --- 3. Ranking Lists (Top 5 of each) --- */}
       <div className="ranking-grid" style={{ marginTop: '30px' }}>
         <RankingList
-          title="Top 3 Selling Products"
+          title="Top 5 Selling Products"
           data={topProducts}
           icon={<FiAward size={24} />}
         />
         <RankingList
-          title="Top 3 Selling Add-ons"
+          title="Top 5 Selling Add-ons"
           data={topAddons}
           icon={<FiCoffee size={24} />}
         />

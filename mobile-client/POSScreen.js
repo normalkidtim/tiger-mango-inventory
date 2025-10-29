@@ -1,3 +1,5 @@
+// mobile-client/POSScreen.js
+
 import React, { useState, useMemo } from 'react';
 import { 
   View, 
@@ -20,7 +22,8 @@ import ProductModal from './ProductModal';
 // Helper function to format prices
 const formatPrice = (price) => `₱${price.toFixed(2)}`;
 
-const POSScreen = () => {
+// MODIFIED: Accept userProfile from props
+const POSScreen = ({ userProfile }) => { 
   const navigation = useNavigation();
   const { menu, menuLoading } = useMenu(); 
 
@@ -84,7 +87,6 @@ const POSScreen = () => {
     try {
       // Clean the cart items before placing the order to remove the temporary 'cartId' and ensure no undefined values are sent.
       const cleanedItems = cart.map(item => {
-        // Use a temporary object and explicitly define/clean values
         const cleanedItem = {
           id: item.id || 'unknown',
           name: item.name || 'Unknown Product',
@@ -94,11 +96,9 @@ const POSScreen = () => {
           quantity: item.quantity || 1,
           basePrice: item.basePrice || 0,
           finalPrice: item.finalPrice || 0,
-          // Ensure these two recipe fields are present but use null if undefined to avoid Firebase error
           lidType: item.lidType === undefined ? null : item.lidType, 
           strawType: item.strawType === undefined ? null : item.strawType,
         };
-        // Remove 'cartId' property if it exists, otherwise return the cleaned item
         const { cartId, ...itemToSave } = cleanedItem;
         return itemToSave;
       });
@@ -108,6 +108,8 @@ const POSScreen = () => {
         totalPrice: cartTotal,
         createdAt: serverTimestamp(),
         status: 'Pending', 
+        // NEW: Add cashier information using the passed userProfile
+        cashier: userProfile?.fullName || userProfile?.email || 'Unknown Cashier',
       };
 
       await addDoc(collection(db, 'orders'), newOrder);
@@ -184,6 +186,7 @@ const POSScreen = () => {
         <Text style={styles.cartItemCategory}>{item.categoryName}</Text>
         {item.addons.length > 0 && (
           <Text style={styles.cartItemAddons}>
+            {/* MODIFIED: Show add-on quantity */}
             + {item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}
           </Text>
         )}

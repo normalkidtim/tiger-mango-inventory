@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
 // Import necessary icons, including new ones for status badges
-import { FiShoppingCart, FiCalendar, FiCheckCircle, FiXCircle } from "react-icons/fi"; 
+import { FiShoppingCart, FiCalendar, FiCheckCircle, FiXCircle, FiUser } from "react-icons/fi"; 
 
 // Helper function to format prices like the mobile client (₱xx.xx)
 const formatPrice = (price) => `₱${(price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -38,11 +38,11 @@ export default function PurchaseHistory() {
       if (!orderDate) return false; 
 
       const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
-
       if (start) {
         start.setHours(0, 0, 0, 0);
       }
+      
+      const end = endDate ? new Date(endDate) : null;
       if (end) {
         end.setHours(23, 59, 59, 999);
       }
@@ -70,6 +70,7 @@ export default function PurchaseHistory() {
     const d = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
     // Format timestamp including date and time
     const timestamp = d.toLocaleDateString('en-US') + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const cashierName = order.cashier || 'N/A'; // Get cashier name
 
     const isVoided = order.status === 'Voided';
     const StatusIcon = isVoided ? FiXCircle : FiCheckCircle;
@@ -95,6 +96,12 @@ export default function PurchaseHistory() {
           </span>
         </div>
         
+        {/* NEW: Cashier Row */}
+        <div className="content-row-history" style={{ marginBottom: '5px' }}>
+            <span className="order-total-text" style={{ fontWeight: '600' }}><FiUser size={14} style={{ marginRight: '5px' }} /> Cashier:</span>
+            <span className="order-total-value" style={{ fontWeight: 'normal' }}>{cashierName}</span>
+        </div>
+
         {/* Total Price Row */}
         <div className="content-row-history">
             <span className="order-total-text">Total Price:</span>
@@ -111,7 +118,8 @@ export default function PurchaseHistory() {
                         <span className="item-name-history">{item.quantity}x {item.name} ({item.size})</span>
                     </div>
                     {(item.addons && item.addons.length > 0) && (
-                        <span className="item-addons-history">+{item.addons.map(a => a.name).join(', ')}</span>
+                        // MODIFIED: Show add-on quantity
+                        <span className="item-addons-history">+{item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}</span>
                     )}
                 </div>
             ))}

@@ -1,3 +1,5 @@
+// mobile-client/ProductModal.js
+
 import React, { useState, useMemo } from 'react';
 import { 
   View, 
@@ -321,7 +323,7 @@ const styles = StyleSheet.create({
     borderColor: '#f4f5f7',
     borderRadius: 5,
   },
-  // KEY FIX: This is now the outer TouchableOpacity
+  // KEY FIX: This is the outer TouchableOpacity container now
   modalOptionBtnAddon: {
     flexBasis: '46%', 
     margin: 6,

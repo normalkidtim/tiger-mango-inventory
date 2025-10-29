@@ -280,13 +280,13 @@ const PendingOrdersScreen = () => {
   // 3. Render function for each order item
   const renderOrderItem = ({ item: order }) => {
     const timestamp = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString('en-US') : 'N/A';
+    const cashierName = order.cashier || 'N/A'; // Get cashier name
     
     return (
       <View style={styles.orderCard}>
         <View style={styles.orderHeader}>
-          {/* FIX 3: Removed Order ID display from the card */}
-          {/* <Text style={styles.orderId}>Order ID: {order.id.substring(0, 8)}</Text> */}
-          <View /> {/* Empty view to keep space distributed if needed */}
+          {/* NEW: Display Cashier Name */}
+          <Text style={styles.cashierName}>Cashier: {cashierName}</Text> 
           <Text style={styles.orderTime}><Ionicons name="time-outline" size={14} color={COLORS.darkGray} /> {timestamp}</Text>
         </View>
         
@@ -301,10 +301,8 @@ const PendingOrdersScreen = () => {
                         <Text style={styles.itemName}>{item.quantity}x {item.name} ({item.size})</Text>
                     </View>
                     {item.addons && item.addons.length > 0 && (
-                        // MODIFIED to show add-on quantity
-                        <Text style={styles.itemAddons}>
-                            +{item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}
-                        </Text>
+                        // MODIFIED: Show quantity for each add-on
+                        <Text style={styles.itemAddons}>+{item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}</Text>
                     )}
                 </View>
             ))}
@@ -386,10 +384,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  orderId: {
+  cashierName: { // NEW STYLE: for cashier name
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.darkGray,
+    color: COLORS.text,
   },
   orderTime: {
     fontSize: 14,

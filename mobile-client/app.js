@@ -29,6 +29,7 @@ async function fetchUserProfile(user) {
         return {
             ...user,
             ...userData,
+            // Ensure fullName is correctly composed for use in logs
             fullName: `${userData.firstName} ${userData.lastName}`,
             role: userData.role
         };
@@ -95,9 +96,10 @@ export default function App() {
             children={(props) => <MainScreen {...props} userProfile={userProfile} />} 
             options={{ title: '', headerTitleAlign: 'center' }}
           />
+          {/* MODIFIED: Pass userProfile to POSScreen for order logging */}
           <Stack.Screen 
             name="TakeOrder" 
-            component={POSScreen} 
+            children={(props) => <POSScreen {...props} userProfile={userProfile} />} 
             options={{ title: 'New Order' }}
           />
           <Stack.Screen 
