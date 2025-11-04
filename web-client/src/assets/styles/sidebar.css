@@ -64,7 +64,7 @@
     .mobile-header-bar {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start; /* Aligns hamburger button to the left */
         position: fixed;
         top: 0;
         left: 0;
@@ -77,15 +77,13 @@
         box-sizing: border-box;
     }
 
-    /* Re-style the header content for the mobile bar */
-    .mobile-header-bar .sidebar-header {
-        display: flex; 
-        padding: 0;
-        margin: 0 0 0 auto; 
+    /* Adjust the spacing of the mobile logo area */
+    .mobile-logo-area {
+        margin-left: 15px !important; /* Space between hamburger and logo */
     }
-    
+
     /* Hide the original desktop header */
-    .sidebar-header.desktop-header {
+    .desktop-header {
         display: none;
     }
     

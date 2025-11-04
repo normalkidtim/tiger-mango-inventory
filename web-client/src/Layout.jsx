@@ -21,7 +21,7 @@ export default function Layout() {
   
   // Close and navigate (used by NavLinks)
   const handleNavLinkClick = () => {
-      // Close sidebar regardless of screen size after navigation if it was open
+      // Close sidebar after navigation
       setIsSidebarOpen(false);
   };
 
@@ -30,6 +30,7 @@ export default function Layout() {
     <div style={{ display: "flex" }}>
       
       {/* --- MOBILE HEADER BAR: Contains the Hamburger Icon --- */}
+      {/* This element is FIXED to the top of the screen on mobile (via CSS) */}
       <div className="mobile-header-bar">
         {/* Hamburger/Close Button */}
         <button className="hamburger-btn" onClick={toggleSidebar} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
@@ -37,7 +38,7 @@ export default function Layout() {
             {isSidebarOpen ? <FiX size={24} color="var(--primary-brand)" /> : <FiMenu size={24} color="var(--primary-brand)" />}
         </button>
         {/* App Title/Logo for the Mobile Header */}
-        <div className="sidebar-header" style={{ margin: 0 }}>
+        <div className="sidebar-header mobile-logo-area" style={{ margin: 0 }}>
           <div className="sidebar-logo-circle"></div>
           <h2 className="sidebar-title" style={{ color: 'var(--text-primary)' }}>Tealicieux</h2>
         </div>
