@@ -1,73 +1,103 @@
-/* === FORM MANAGER STYLES (NEW DESIGN) === */
+/* web-client/src/assets/styles/FormManager.css */
 
-/* Use the global .card class for the container */
-.manager-form-container {
-    background-color: var(--color-bg-container);
-    border: 1px solid var(--color-border);
-    border-radius: var(--card-border-radius);
-    box-shadow: var(--card-shadow);
-}
-.manager-form-container h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: var(--color-text-primary);
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.manager-form-content {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
+/* The main .manager-form-container is now just a global .card.
+  We only need to style the content *inside* it.
+*/
 
-/* Container for a single label + input */
+/* Container for grouping inline fields */
 .form-group-item {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    margin-bottom: 16px; /* Added margin for stacking */
 }
-
 .form-group-item label {
     font-size: 0.9rem;
-    color: var(--color-text-primary);
     font-weight: 500;
+    color: var(--c-text-secondary);
 }
 
 /* Wrapper for fields that should appear on a single line */
 .form-inline-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 16px;
-    align-items: flex-end; /* Aligns items/buttons to the bottom line */
+    align-items: flex-end; 
 }
 
-/* Input & Select Field Styling */
-.input-field {
-    width: 100%;
-    padding: 10px 12px;
-    box-sizing: border-box;
-    font-family: var(--font-main);
-    font-size: 0.95rem;
-    background-color: var(--color-bg-body); 
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border);
+.form-inline-group .form-group-item {
+    flex: 1; 
+    margin-bottom: 0;
+}
+.form-inline-group .addon-name-field {
+    flex: 2;
+}
+.form-inline-group .addon-price-field {
+    flex: 1;
+}
+
+/* --- Button Styling --- */
+/* We now use global .btn .btn-primary, etc. */
+/* This file can be simplified if buttons are updated in JSX, */
+/* but these overrides will still work. */
+
+.btn-add-action {
+    height: 44px;
+    padding: 0 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn-add-primary {
+  background-color: var(--c-brand);
+  color: white;
+}
+.btn-add-secondary {
+  background-color: var(--c-blue);
+  color: white;
+}
+.btn-delete-item {
+    background-color: var(--c-brand-light);
+    color: var(--c-brand-dark);
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    border: none;
     border-radius: 6px;
-    outline: none;
-    transition: border 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }
-.input-field:focus {
-    border-color: var(--color-interactive);
-    box-shadow: 0 0 0 3px var(--color-interactive-light);
+.btn-delete-item:hover {
+    background-color: #FEE2E2;
+    color: #B91C1C;
 }
 
-/* --- Mobile Responsiveness --- */
+.category-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+}
+
+/* --- Mobile Responsiveness for Inline Forms --- */
 @media (max-width: 768px) {
     .form-inline-group {
-        grid-template-columns: 1fr; /* Stack elements */
+        flex-direction: column;
         gap: 16px;
+        align-items: stretch;
+    }
+    .form-inline-group .btn-add-action {
+        width: 100%;
+        margin-top: 5px;
+    }
+    
+    .category-manager-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
     }
 }

@@ -1,537 +1,105 @@
 /* web-client/src/assets/styles/admin.css */
 
-/* --- Section Headers --- */
-
-.admin-section {
-
-    background-color: var(--background-dark);
-
-    border: 1px solid var(--border-color);
-
-    border-radius: 8px;
-
-    padding: 20px;
-
-    margin-bottom: 30px;
-
-}
-
-.admin-section h3 {
-
-    font-size: 1.3rem;
-
-    font-weight: 600;
-
-    color: var(--primary-brand);
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    margin-bottom: 20px;
-
-    padding-bottom: 10px;
-
-    border-bottom: 1px dashed var(--border-color);
-
-}
-
-/* NEW: Two-Column Form Row - Desktop */
-.form-row-2-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-.no-data-admin {
-
-    text-align: center;
-
-    padding: 20px;
-
-    color: var(--text-secondary);
-
-    font-style: italic;
-
-}
-
-
+/* .admin-section and .user-card are now global .card
+  We just style the content *inside* them.
+*/
 
 /* --- User Grid & Card Layout --- */
-
 .user-grid {
-
     display: grid;
-
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
-
 }
-
-
-
-.user-card {
-
-    border: 1px solid var(--border-color);
-
-    border-radius: 8px;
-
-    padding: 20px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    justify-content: space-between;
-
-    transition: all 0.2s;
-
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-    border-left: 5px solid #388E3C; /* Always active/green border */
-
-}
-
-
-
-/* Base User Info Display */
-
 .user-info h4 {
-
-    margin-bottom: 10px;
-
+    margin: 0 0 10px 0;
     font-size: 1.2rem;
-
-    color: var(--text-primary);
-
+    color: var(--c-text-primary);
 }
-
-/* Updated for clarity and to include the new field */
-
 .user-email, .user-role, .user-contact {
-
     font-size: 0.9rem;
-
-    color: var(--text-secondary);
-
+    color: var(--c-text-secondary);
     margin-bottom: 5px;
-
     display: flex;
-
     align-items: center;
-
-    gap: 5px;
-
+    gap: 8px;
 }
-
 .user-role {
-
     margin-top: 10px;
-
 }
-
-/* Style for separating the user info from the role in view mode */
-
 .user-info .user-contact {
-
     margin-bottom: 15px;
-
     padding-bottom: 15px;
-
-    border-bottom: 1px dashed var(--border-color);
-
-    color: var(--text-primary); 
-
+    border-bottom: 1px dashed var(--c-border);
+    color: var(--c-text-primary); 
 }
-
-
-
-
-
-/* Edit Form Styles (Uses classes from FormManager.css) */
-
-.user-info .form-group-item {
-
-    margin-bottom: 10px;
-
-}
-
-.user-info .form-group-item label {
-
-    font-size: 0.85rem;
-
-    font-weight: 600;
-
-    color: var(--text-secondary);
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    margin-bottom: 3px;
-
-}
-
-.user-info .input-field {
-
-    padding: 8px;
-
-}
-
 .user-info .user-email {
-
-    /* Email display doesn't need separator in edit mode, so keep only base style */
-
     margin-top: 10px;
-
     margin-bottom: 15px;
-
     padding-bottom: 15px;
-
-    border-bottom: 1px dashed var(--border-color);
-
-    color: var(--text-primary); 
-
+    border-bottom: 1px dashed var(--c-border);
+    color: var(--c-text-primary); 
 }
 
-
-
-/* NEW: Password Change Section Styles */
-
+/* --- Password Change Section --- */
 .password-change-section {
-
-    padding: 15px;
-
-    margin-top: 15px;
-
-    border: 1px solid var(--border-color);
-
-    border-radius: 6px;
-
-    background-color: var(--background-light);
-
+    padding: 16px;
+    margin-top: 16px;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background-color: var(--c-bg-body);
 }
-
 .password-change-section h4 {
-
     font-size: 1rem;
-
-    color: var(--primary-brand);
-
-    margin-bottom: 10px;
-
+    color: var(--c-text-primary);
+    margin: 0 0 10px 0;
     display: flex;
-
     align-items: center;
-
     gap: 5px;
-
 }
-
-.password-change-section .btn-password {
-
-    background-color: #0065ff; /* Use accent blue for password action */
-
-    color: white;
-
-    height: 35px;
-
-    font-size: 0.9rem;
-
-    margin-top: 10px;
-
-}
-
-.password-change-section .btn-password:hover {
-
-    background-color: #0052cc;
-
-}
-
 .password-note {
-
-    font-size: 0.75rem;
-
-    color: #D32F2F; /* Red warning text */
-
-    margin-top: 5px;
-
-    font-weight: 600;
-
-}
-
-
-
-
-
-/* Small error message inside the card */
-
-.error-message-small {
-
-    color: var(--primary-brand);
-
     font-size: 0.8rem;
-
+    color: var(--c-brand-dark);
+    margin-top: 8px;
     font-weight: 500;
-
-    margin-bottom: 10px;
-
 }
-
-
-
-
 
 /* Role Badge */
-
 .role-badge {
-
-    padding: 3px 8px;
-
-    border-radius: 4px;
-
-    font-weight: 700;
-
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
     font-size: 0.8rem;
-
     text-transform: uppercase;
-
     margin-left: 5px;
-
 }
-
-.role-badge.admin { background-color: #E53935; color: white; }
-
-.role-badge.manager { background-color: #FFD700; color: var(--text-primary); }
-
-.role-badge.employee { background-color: #0065ff; color: white; }
-
-
+.role-badge.admin { background-color: var(--c-brand-light); color: var(--c-brand); }
+.role-badge.manager { background-color: var(--c-gold-light); color: var(--c-gold); }
+.role-badge.employee { background-color: var(--c-blue-light); color: var(--c-blue); }
 
 /* --- Action Buttons --- */
-
 .user-card-actions {
-
     display: flex;
-
     flex-direction: column;
-
     gap: 10px;
-
     padding-top: 20px;
-
+    margin-top: 20px;
+    border-top: 1px solid var(--c-border);
 }
-
-
-
-/* Style for the two buttons side-by-side in read-only mode */
-
 .read-only-actions {
-
     display: flex;
-
     gap: 10px;
-
 }
-
 .read-only-actions .btn-action-half {
-
     flex: 1;
-
-    height: 40px; 
-
-    padding: 0 15px;
-
-    border-radius: 6px;
-
-    font-weight: 600;
-
-    font-size: 0.95rem;
-
-    transition: all 0.2s;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 5px;
-
-    border: none;
-
-    cursor: pointer;
-
 }
 
-
-
-
-
-/* Full width buttons in edit mode */
-
-.user-card-actions .btn-add-action {
-
-    height: 40px; 
-
-    padding: 0 15px;
-
-    width: 100%;
-
-}
-
-
-
-/* Edit Button */
-
-.read-only-actions .btn-edit {
-
-    background-color: var(--accent-button);
-
-    color: white;
-
-}
-
-.read-only-actions .btn-edit:hover {
-
-    background-color: #0052cc;
-
-}
-
-
-
-/* Delete Button */
-
-.read-only-actions .btn-delete {
-
-    background-color: #D32F2F; /* A safe red for delete */
-
-    color: white;
-
-}
-
-.read-only-actions .btn-delete:hover {
-
-    background-color: #B71C1C;
-
-}
-
-
-
-/* Save/Cancel in edit mode */
-
-.user-card-actions .btn-save {
-
-    background-color: #4CAF50; /* Green */
-
-    color: white;
-
-}
-
-.user-card-actions .btn-cancel {
-
-    background-color: var(--background-light);
-
-    color: var(--text-secondary);
-
-    border: 1px solid var(--border-color);
-
-}
-
-.user-card-actions .btn-cancel:hover {
-
-    border-color: var(--primary-brand);
-
-    color: var(--primary-brand);
-
-}
-
-
-
-.error-message, .success-message {
-
-    border-radius: 6px;
-
-    font-weight: 500;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 10px;
-
-}
-
-.error-message {
-
-    color: var(--primary-brand);
-
-    background-color: rgba(229, 57, 53, 0.1);
-
-    border: 1px solid rgba(229, 57, 53, 0.5);
-
-}
-
-.success-message {
-
-    color: #388E3C;
-
-    background-color: rgba(76, 175, 80, 0.1);
-
-    border: 1px solid rgba(76, 175, 80, 0.5);
-
-}
-
-
-
-/* NEW: Global Warning/Error/Success Box Styles */
-
-.warning-message-box {
-
-    color: #CC9900; /* Darker yellow/orange text */
-
-    background-color: rgba(255, 223, 0, 0.1); /* Light yellow background */
-
-    border: 1px solid rgba(255, 223, 0, 0.5); 
-
-    padding: 10px;
-
-    border-radius: 4px;
-
-    text-align: center;
-
-    font-weight: 500;
-
-}
-
-/* --- Mobile Responsiveness (Max-width 768px) --- */
+/* --- Mobile Responsiveness --- */
 @media (max-width: 768px) {
-    /* Stack two-column grid forms */
-    .form-row-2-col {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    /* Ensure the user grid stacks cards correctly */
     .user-grid {
         grid-template-columns: 1fr;
         gap: 15px;
     }
-    
-    /* Stack the read-only actions buttons vertically */
     .read-only-actions {
         flex-direction: column;
-        gap: 10px;
-    }
-    .read-only-actions .btn-action-half {
-        flex: auto;
-        width: 100%;
     }
 }

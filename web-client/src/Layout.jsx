@@ -6,6 +6,7 @@ import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit, FiBarChart2, FiUs
 export default function Layout() {
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
+  // State for mobile menu toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
 
   const handleLogout = async () => {
@@ -13,18 +14,20 @@ export default function Layout() {
     navigate("/login");
   };
   
+  // Toggles the sidebar
   const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
   };
   
+  // Closes sidebar after a link is clicked
   const handleNavLinkClick = () => {
       setIsSidebarOpen(false);
   };
 
   return (
-    <div className="layout-container">
+    <div className="app-layout">
       
-      {/* --- MOBILE-ONLY HEADER BAR (Hamburger Menu) --- */}
+      {/* --- MOBILE-ONLY HEADER BAR --- */}
       <div className="mobile-header-bar">
         <button 
             className="hamburger-btn" 
@@ -44,7 +47,7 @@ export default function Layout() {
       {/* --- THE SIDEBAR (NAVIGATION MENU) --- */}
       <aside className={`sidebar ${isSidebarOpen ? 'is-open' : ''}`}> 
         
-        {/* HEADER FOR MOBILE (Inside the slide-out menu) */}
+        {/* Header for Mobile (Inside Menu) */}
         <div className="sidebar-mobile-header">
             <div className="sidebar-header-title">
                 <div className="sidebar-logo-circle"></div>
@@ -55,7 +58,7 @@ export default function Layout() {
             </button>
         </div>
 
-        {/* HEADER FOR DESKTOP */}
+        {/* Header for Desktop */}
         <div className="sidebar-header desktop-header">
           <div className="sidebar-logo-circle"></div>
           <h2 className="sidebar-title">Tealicieux</h2>

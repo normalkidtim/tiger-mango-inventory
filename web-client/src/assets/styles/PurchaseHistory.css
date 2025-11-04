@@ -1,20 +1,15 @@
 /* web-client/src/assets/styles/PurchaseHistory.css */
 
-/* This container will hold all the order cards */
+/* This container holds all the order cards */
 .history-list-container {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
-/* This is the main card style for each order */
-.order-card-history {
-  background: var(--background-dark);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden; /* Ensures padding is respected */
-}
+/* The main .order-card-history IS the new .card.
+  We just apply the .card class in the JSX.
+*/
 
 /* Header: Contains Status and Timestamp */
 .card-header-history {
@@ -23,9 +18,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  padding: 12px 15px;
-  background-color: var(--background-light);
-  border-bottom: 1px solid var(--border-color);
+  padding: 12px 20px;
+  background-color: var(--c-bg-body);
+  border-bottom: 1px solid var(--c-border);
 }
 
 /* Status Badge (e.g., "Completed", "Voided") */
@@ -40,18 +35,18 @@
 }
 
 .status-badge.completed {
-  background-color: rgba(76, 175, 80, 0.1); /* Light Green */
-  color: #388E3C; /* Dark Green */
+  background-color: var(--c-green-light);
+  color: var(--c-green);
 }
 
 .status-badge.voided {
-  background-color: rgba(229, 57, 53, 0.1); /* Light Red */
-  color: var(--primary-brand); /* Brand Red */
+  background-color: var(--c-brand-light);
+  color: var(--c-brand);
 }
 
 .timestamp-text {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--c-text-secondary);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -59,10 +54,10 @@
 
 /* Body: Contains Cashier and Total Price */
 .card-body-history {
-  padding: 15px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .content-row-history {
@@ -74,7 +69,7 @@
 
 .content-row-history .label {
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--c-text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -82,7 +77,7 @@
 
 .content-row-history .value {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--c-text-primary);
 }
 
 .content-row-history .value.total {
@@ -92,9 +87,9 @@
 
 /* Footer: Contains the list of items */
 .items-container-history {
-  background: var(--background-light);
-  padding: 10px 15px;
-  border-top: 1px solid var(--border-color);
+  background: var(--c-bg-body);
+  padding: 12px 20px;
+  border-top: 1px solid var(--c-border);
 }
 
 .item-row-history {
@@ -102,10 +97,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--c-border);
 }
 .item-row-history:last-child {
   border-bottom: none;
+  padding-bottom: 0;
+}
+.item-row-history:first-child {
+  padding-top: 0;
 }
 
 .item-details-history {
@@ -116,19 +115,20 @@
 .item-category-name {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--accent-button); /* Blue */
+  color: var(--c-blue); /* Blue */
   text-transform: uppercase;
 }
 
 .item-name-history {
   font-size: 0.95rem;
-  color: var(--text-primary);
+  color: var(--c-text-primary);
   font-weight: 500;
 }
 
 .item-addons-history {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--c-text-secondary);
   font-style: italic;
   text-align: right;
+  padding-left: 10px;
 }

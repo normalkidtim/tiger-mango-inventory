@@ -30,16 +30,33 @@ export default function Login() {
       <div className="auth-card">
         <h2 className="auth-title">Tealicieux</h2>
         {error && <div className="error-message">{error}</div>}
+        
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input 
+              className="input-field"
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input 
+              className="input-field"
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
           </div>
-          <button disabled={loading} type="submit" className="auth-button">
+          <button 
+            disabled={loading} 
+            type="submit" 
+            className="auth-button"
+          >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>

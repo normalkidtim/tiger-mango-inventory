@@ -1,34 +1,15 @@
-/* === INVENTORY STYLES (NEW DESIGN) === */
+/* web-client/src/assets/styles/inventory.css */
 
-/* Use the global grid classes */
+/* The .inventory-card is now a global .card.
+  We just style the content *inside* it.
+*/
+
 .inventory-sections { 
-  display: grid;
-  gap: 24px;
-}
-.grid-col-2 { grid-template-columns: repeat(2, 1fr); }
-.grid-col-3 { grid-template-columns: repeat(3, 1fr); }
-
-/* The inventory card now just uses the global .card */
-.inventory-card {
-  background-color: var(--color-bg-container);
-  border: 1px solid var(--color-border);
-  border-radius: var(--card-border-radius);
-  box-shadow: var(--card-shadow);
-  display: flex; 
-  flex-direction: column; 
-}
-.inventory-card-header {
-  display: flex; align-items: center; gap: 10px; 
-  padding: 16px 20px; 
-  font-size: 1.25rem; font-weight: 600;
-  border-bottom: 1px solid var(--color-border); 
-  color: var(--color-text-primary);
-}
-.inventory-card-header svg {
-  color: var(--color-interactive); /* Blue icon */
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+  gap: 24px; 
 }
 .inventory-item-list { 
-  padding: 20px; 
   display: flex; 
   flex-direction: column; 
   gap: 16px; 
@@ -38,7 +19,7 @@
   justify-content: space-between; 
   align-items: center; 
   padding-bottom: 16px; 
-  border-bottom: 1px solid var(--color-border); 
+  border-bottom: 1px solid var(--c-border); 
 }
 .inventory-item:last-child { 
   border-bottom: none; 
@@ -46,7 +27,7 @@
 }
 .inventory-item-name { 
   font-size: 1rem; 
-  color: var(--color-text-secondary); 
+  color: var(--c-text-primary); 
   font-weight: 500;
 }
 .inventory-item-stock {
@@ -59,57 +40,49 @@
   padding: 8px; 
   font-size: 1rem; 
   font-family: var(--font-main); 
-  text-align: center; font-weight: 600;
-  border: 1px solid var(--color-border); 
-  background-color: var(--color-bg-body); 
-  color: var(--color-text-primary);
+  text-align: center; 
+  font-weight: 600;
+  border: 1px solid var(--c-border); 
+  background-color: var(--c-bg-body); 
+  color: var(--c-text-primary);
   border-radius: 6px; 
   outline: none; 
   -moz-appearance: textfield; 
   transition: all 0.2s ease;
 }
 .inventory-item-stock input:focus { 
-  border-color: var(--color-interactive); 
-  box-shadow: 0 0 0 3px var(--color-interactive-light); 
+  border-color: var(--c-brand); 
+  background-color: var(--c-bg-card);
+  box-shadow: 0 0 0 3px var(--c-brand-light); 
 }
 .inventory-item-stock input::-webkit-outer-spin-button, 
 .inventory-item-stock input::-webkit-inner-spin-button { 
   -webkit-appearance: none; margin: 0; 
 }
-.inventory-item-stock .btn-delete-item {
+
+.inventory-delete-btn {
   background: none;
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--c-text-secondary);
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  margin-left: 5px;
 }
-.inventory-item-stock .btn-delete-item:hover {
-  color: var(--color-danger);
+.inventory-delete-btn:hover {
+  color: var(--c-brand);
 }
+
 .no-items-message { 
   padding: 20px; 
   text-align: center; 
-  color: var(--color-text-secondary); 
+  color: var(--c-text-secondary); 
   font-style: italic; 
 }
 
-@media (max-width: 960px) {
-  .grid-col-3 {
-    grid-template-columns: 1fr; /* Stack on smaller screens */
-  }
-}
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .grid-col-2 {
-    grid-template-columns: 1fr; /* Stack on mobile */
-  }
-  .inventory-card-header {
-    font-size: 1.1rem;
-    padding: 12px 15px;
-  }
-  .inventory-item-list {
-    padding: 15px;
-  }
-  .inventory-item-name {
-    font-size: 0.95rem;
-  }
+    .inventory-sections {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
 }

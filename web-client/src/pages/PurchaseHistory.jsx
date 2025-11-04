@@ -1,5 +1,4 @@
 // web-client/src/pages/PurchaseHistory.jsx
-
 import React, { useEffect, useState, useMemo } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
@@ -24,26 +23,19 @@ export default function PurchaseHistory() {
     return () => unsub();
   }, []);
 
-  // Filter orders based on date range AND status
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      // 1. Filter by Status
       const isStatusMatch = filterStatus === 'All' || order.status === filterStatus;
       if (!isStatusMatch) return false;
 
-      // 2. Filter by Date Range
       const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : null;
       if (!orderDate) return false; 
 
       const start = startDate ? new Date(startDate) : null;
-      if (start) {
-        start.setHours(0, 0, 0, 0);
-      }
+      if (start) start.setHours(0, 0, 0, 0);
       
       const end = endDate ? new Date(endDate) : null;
-      if (end) {
-        end.setHours(23, 59, 59, 999);
-      }
+      if (end) end.setHours(23, 59, 59, 999);
 
       const isAfterStart = start ? orderDate >= start : true;
       const isBeforeEnd = end ? orderDate <= end : true;
@@ -52,7 +44,6 @@ export default function PurchaseHistory() {
     });
   }, [orders, startDate, endDate, filterStatus]);
   
-  // Helper Component for the Filter Buttons
   const FilterButton = ({ status, label }) => (
     <button
       className={`btn-filter ${filterStatus === status ? 'btn-active' : ''}`}
@@ -62,8 +53,6 @@ export default function PurchaseHistory() {
     </button>
   );
 
-
-  // Component for a single Order Card (New Card Design)
   const OrderCard = ({ order }) => {
     const d = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
     const timestamp = d.toLocaleDateString('en-US') + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -74,7 +63,7 @@ export default function PurchaseHistory() {
     const StatusIcon = isVoided ? FiXCircle : FiCheckCircle;
 
     return (
-      <div className="order-card-history">
+      <div className="card">
         {/* Header with Status Badge and Timestamp */}
         <div className="card-header-history">
           <div className={`status-badge ${statusClassName}`}>
@@ -112,11 +101,9 @@ export default function PurchaseHistory() {
                 </div>
             ))}
         </div>
-        
       </div>
     );
   };
-
 
   return (
     <div>
@@ -124,7 +111,7 @@ export default function PurchaseHistory() {
       <div className="page-header-underline"></div>
 
       {/* Date Range Filter Bar */}
-      <div className="filter-bar">
+      <div className="card filter-bar">
         <div className="filter-group">
           <FiCalendar />
           <label>From:</label>
@@ -135,12 +122,12 @@ export default function PurchaseHistory() {
           <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
         <button className="btn-filter btn-outline" onClick={() => { setStartDate(""); setEndDate(""); }}>
-          Clear
+          Clear Dates
         </button>
       </div>
 
       {/* Status Filter Bar */}
-      <div className="filter-bar status-filter-bar">
+      <div className="card filter-bar status-filter-bar">
           <FilterButton status="All" label="All" />
           <FilterButton status="Completed" label="Completed" />
           <FilterButton status="Voided" label="Voided" />
@@ -151,7 +138,11 @@ export default function PurchaseHistory() {
         {loading ? (
             <p className="no-data">Loading...</p>
         ) : filteredOrders.length === 0 ? (
-            <p className="no-data">No orders found for the selected filter criteria.</p>
+            <div className="card">
+                <div className="card-body">
+                    <p className="no-data" style={{padding: 0}}>No orders found for the selected filter criteria.</p>
+                </div>
+            </div>
         ) : (
             filteredOrders.map((order) => <OrderCard key={order.id} order={order} />)
         )}

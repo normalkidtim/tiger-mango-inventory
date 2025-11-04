@@ -1,81 +1,106 @@
 /* src/assets/styles/filters.css */
 
 .filter-bar {
-  display: flex;
-  flex-wrap: wrap; /* Allow filters to wrap on small screens */
-  align-items: center;
-  justify-content: space-between; /* Space out groups */
-  gap: 16px;
-  padding: 16px;
-  background-color: var(--background-dark);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  /* Use the global card style */
+  background-color: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   margin-bottom: 24px;
+  
+  /* Layout */
+  display: flex;
+  flex-wrap: wrap; 
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
 }
 
-/* NEW: Style for the status filter bar */
 .status-filter-bar {
     justify-content: flex-start;
 }
+
+/* Filter buttons (All, Completed, Voided) */
 .btn-filter {
-    padding: 8px 15px;
+    padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
-    background-color: var(--background-light);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    background-color: var(--c-bg-body);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-secondary);
 }
 .btn-filter:hover {
-    background-color: rgba(229, 57, 53, 0.1);
-    color: var(--primary-brand);
-    border-color: var(--primary-brand);
+    background-color: var(--c-brand-light);
+    color: var(--c-brand);
+    border-color: var(--c-brand-light);
 }
 .btn-filter.btn-active {
-    background-color: var(--primary-brand);
-    color: var(--background-dark);
-    border-color: var(--primary-brand);
+    background-color: var(--c-brand);
+    color: var(--c-bg-card);
+    border-color: var(--c-brand);
+    font-weight: 600;
+}
+.btn-filter.btn-outline {
+  background-color: transparent;
+  border-color: var(--c-border);
+}
+.btn-filter.btn-outline:hover {
+  border-color: var(--c-text-primary);
+  color: var(--c-text-primary);
+  background-color: var(--c-bg-body);
 }
 
+
+/* Date/Search filter groups */
 .filter-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-secondary);
+  color: var(--c-text-secondary);
 }
-
 .filter-group label {
   font-weight: 500;
+  font-size: 0.9rem;
 }
-
 .filter-group input[type="date"],
 .filter-group input[type="text"] {
   font-family: var(--font-main);
-  background-color: var(--background-light); /* Light background for input */
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background-color: var(--c-bg-body);
+  color: var(--c-text-primary);
+  border: 1px solid var(--c-border);
   border-radius: 6px;
   padding: 8px 10px;
   outline: none;
-  width: 150px; /* Give date inputs a consistent size */
+  width: 160px;
 }
-
-/* Style for the date picker icon */
+.filter-group input[type="text"] {
+    width: 250px;
+}
 .filter-group input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.5); /* Make it gray */
+  filter: invert(0.5);
   cursor: pointer;
 }
 
-/* New style for outline buttons */
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-}
-.btn-outline:hover {
-  border-color: var(--primary-brand);
-  color: var(--primary-brand);
-  background-color: rgba(229, 57, 53, 0.05); /* Light red hover */
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-group {
+    width: 100%;
+  }
+  .filter-group input[type="date"],
+  .filter-group input[type="text"] {
+    width: 100%;
+    flex: 1;
+  }
+  .btn-filter.btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
 }

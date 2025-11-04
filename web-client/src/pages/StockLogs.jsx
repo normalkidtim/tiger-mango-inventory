@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { FiFileText, FiSearch } from "react-icons/fi";
-import "../assets/styles/tables.css";
+// We no longer need to import tables.css, it's global
 
 export default function StockLogs() {
   const [logs, setLogs] = useState([]);
@@ -38,51 +38,55 @@ export default function StockLogs() {
       </div>
       <div className="page-header-underline"></div>
 
-      {/* ✅ Added the search filter bar */}
-      <div className="filter-bar">
+      {/* Search filter bar */}
+      <div className="card filter-bar">
         <div className="filter-group" style={{ width: '100%' }}>
           <FiSearch />
+          <label htmlFor="search-logs" style={{ fontWeight: 600 }}>Search:</label>
           <input
+            id="search-logs"
             type="text"
             placeholder="Search by item or user..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', outline: 'none' }}
+            style={{ width: '100%', flex: 1, outline: 'none' }}
           />
         </div>
       </div>
 
-      <div className="table-box">
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>New Value</th>
-              <th>User</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody>
-          {loading ? (
-              <tr><td colSpan="4" className="no-data">Loading logs...</td></tr>
-            ) : filteredLogs.length > 0 ? (
-              filteredLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>{log.item}</td>
-                  <td>{log.newValue}</td>
-                  <td>{log.user}</td>
-                  <td>{log.timestamp?.toDate().toLocaleString('en-US', { timeZone: 'Asia/Manila' })}</td>
-                </tr>
-              ))
-            ) : (
+      <div className="card no-padding">
+        <div className="card-body">
+          <table>
+            <thead>
               <tr>
-                <td colSpan="4" className="no-data">
-                  No stock logs found
-                </td>
+                <th>Item</th>
+                <th>New Value</th>
+                <th>User</th>
+                <th>Timestamp</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+            {loading ? (
+                <tr><td colSpan="4" className="no-data">Loading logs...</td></tr>
+              ) : filteredLogs.length > 0 ? (
+                filteredLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td>{log.item}</td>
+                    <td>{log.newValue}</td>
+                    <td>{log.user}</td>
+                    <td>{log.timestamp?.toDate().toLocaleString('en-US', { timeZone: 'Asia/Manila' })}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="no-data">
+                    No stock logs found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

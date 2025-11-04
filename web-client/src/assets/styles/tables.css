@@ -1,12 +1,59 @@
-.table-box { background-color: var(--background-dark); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; overflow-x: auto; }
-.table-box table { width: 100%; border-collapse: collapse; }
-.table-box th {
-  background: rgba(229, 57, 53, 0.1); /* Light Red background */
-  color: var(--primary-brand); /* Brand Red text */
-  padding: 12px 15px; text-align: left;
-  font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+/* This file is now minimal. 
+  The card container is defined by the global .card style.
+  We just style the table *inside* the card.
+*/
+
+.card table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  /* Remove padding from card-body when holding a table */
 }
-.table-box td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-size: 1rem; color: var(--text-secondary); }
-.table-box tbody tr:last-child td { border-bottom: none; }
-.table-box tbody tr:hover { background-color: rgba(0, 0, 0, 0.03); } /* Light hover effect */
-.no-data { text-align: center; padding: 40px; color: var(--text-secondary); font-style: italic; }
+.card.no-padding .card-body {
+    padding: 0;
+    overflow-x: auto; /* Allow table to scroll horizontally on mobile */
+}
+
+.card th {
+  background: var(--c-bg-body);
+  color: var(--c-text-secondary);
+  padding: 12px 24px; 
+  text-align: left;
+  font-size: 0.8rem; 
+  font-weight: 600; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px;
+}
+.card td { 
+  padding: 16px 24px; 
+  border-bottom: 1px solid var(--c-border); 
+  font-size: 0.95rem; 
+  color: var(--c-text-primary); 
+}
+
+/* Style the first th/td */
+.card th:first-child, .card td:first-child {
+  padding-left: 24px;
+}
+/* Style the last th/td */
+.card th:last-child, .card td:last-child {
+  padding-right: 24px;
+}
+
+.card tbody tr:last-child td { 
+  border-bottom: none; 
+}
+.card tbody tr:hover { 
+  background-color: var(--c-bg-body); 
+}
+
+/* Make table inputs blend in */
+.card td .input-field {
+  width: 90px;
+  padding: 8px 10px;
+  text-align: center;
+  font-weight: 500;
+  background-color: var(--c-bg-body);
+}
+.card td .input-field:focus {
+  background-color: var(--c-bg-card);
+}
