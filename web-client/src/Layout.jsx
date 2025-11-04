@@ -6,7 +6,6 @@ import { FiGrid, FiFileText, FiLogOut, FiShoppingCart, FiEdit, FiBarChart2, FiUs
 export default function Layout() {
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
-  // New state for mobile menu toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
 
   const handleLogout = async () => {
@@ -14,43 +13,49 @@ export default function Layout() {
     navigate("/login");
   };
   
-  // Toggle function
   const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
   };
   
-  // Close and navigate (used by NavLinks)
   const handleNavLinkClick = () => {
-      // Close sidebar after navigation
       setIsSidebarOpen(false);
   };
 
-
   return (
-    <div style={{ display: "flex" }}>
+    <div className="layout-container">
       
-      {/* --- MOBILE HEADER BAR: Contains the Hamburger Icon --- */}
-      {/* This element is FIXED to the top of the screen on mobile (via CSS) */}
+      {/* --- MOBILE-ONLY HEADER BAR (Hamburger Menu) --- */}
       <div className="mobile-header-bar">
-        {/* Hamburger/Close Button */}
-        <button className="hamburger-btn" onClick={toggleSidebar} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            {/* Show X icon when menu is open, otherwise show hamburger */}
-            {isSidebarOpen ? <FiX size={24} color="var(--primary-brand)" /> : <FiMenu size={24} color="var(--primary-brand)" />}
+        <button 
+            className="hamburger-btn" 
+            onClick={toggleSidebar}
+        >
+            <FiMenu size={24} />
         </button>
-        {/* App Title/Logo for the Mobile Header */}
-        <div className="sidebar-header mobile-logo-area" style={{ margin: 0 }}>
+        <div className="mobile-header-title">
           <div className="sidebar-logo-circle"></div>
-          <h2 className="sidebar-title" style={{ color: 'var(--text-primary)' }}>Tealicieux</h2>
+          <h2 className="sidebar-title">Tealicieux</h2>
         </div>
       </div>
       
-      {/* MOBILE OVERLAY: Dims the background when menu is open */}
+      {/* --- MOBILE-ONLY OVERLAY --- */}
       {isSidebarOpen && <div className="mobile-overlay" onClick={toggleSidebar}></div>}
 
-      {/* SIDEBAR: The collapsible navigation menu */}
+      {/* --- THE SIDEBAR (NAVIGATION MENU) --- */}
       <aside className={`sidebar ${isSidebarOpen ? 'is-open' : ''}`}> 
         
-        {/* Desktop Sidebar Header (Visible only on Desktop) */}
+        {/* HEADER FOR MOBILE (Inside the slide-out menu) */}
+        <div className="sidebar-mobile-header">
+            <div className="sidebar-header-title">
+                <div className="sidebar-logo-circle"></div>
+                <h2 className="sidebar-title">Tealicieux</h2>
+            </div>
+            <button className="sidebar-close-btn" onClick={toggleSidebar}>
+                <FiX size={24} />
+            </button>
+        </div>
+
+        {/* HEADER FOR DESKTOP */}
         <div className="sidebar-header desktop-header">
           <div className="sidebar-logo-circle"></div>
           <h2 className="sidebar-title">Tealicieux</h2>
@@ -66,7 +71,7 @@ export default function Layout() {
           )}
           <NavLink to="/analytics" className="sidebar-link" onClick={handleNavLinkClick}><FiBarChart2 /> Sales Analytics</NavLink> 
           
-          {/* Admin Links - Only visible to Admins */}
+          {/* Admin Links */}
           {currentUser?.role === 'admin' && (
             <>
               <NavLink to="/admin-panel" className="sidebar-link" onClick={handleNavLinkClick}><FiUsers /> Admin Panel</NavLink>
@@ -82,7 +87,7 @@ export default function Layout() {
         </div>
       </aside>
       
-      {/* Main Content Area */}
+      {/* --- MAIN CONTENT AREA --- */}
       <main className="main-content">
         <Outlet />
       </main>

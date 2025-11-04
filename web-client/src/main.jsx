@@ -12,7 +12,8 @@ import './assets/styles/tables.css';
 import './assets/styles/auth.css';
 import './assets/styles/filters.css'; 
 import './assets/styles/analytics.css';
-import './assets/styles/admin.css'; // NEW: Import Admin Panel CSS
+import './assets/styles/admin.css';
+import './assets/styles/PurchaseHistory.css'; // <-- ADD THIS NEW IMPORT
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

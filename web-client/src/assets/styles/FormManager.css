@@ -1,132 +1,73 @@
-/* web-client/src/assets/styles/FormManager.css */
+/* === FORM MANAGER STYLES (NEW DESIGN) === */
 
-/* --- General Form Containers --- */
+/* Use the global .card class for the container */
 .manager-form-container {
+    background-color: var(--color-bg-container);
+    border: 1px solid var(--color-border);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-shadow);
+}
+.manager-form-container h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--color-text-primary);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.manager-form-content {
     padding: 20px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background-color: var(--background-dark); /* White card background */
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 16px;
 }
 
-/* Container for grouping inline fields */
+/* Container for a single label + input */
 .form-group-item {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
 }
-
-/* Wrapper for fields that should appear on a single line (like prices or name/price) */
-.form-inline-group {
-    display: flex;
-    gap: 10px;
-    align-items: flex-end; /* Aligns items/buttons to the bottom line */
-}
-
-/* Ensure child items fill the space within the inline group */
-.form-inline-group .form-group-item {
-    flex: 1; 
-}
-
-/* Specific size override for Add-on Name/Price distribution */
-.form-inline-group .addon-name-field {
-    flex: 2; /* Takes 2/3rds of the space */
-}
-.form-inline-group .addon-price-field {
-    flex: 1; /* Takes 1/3rd of the space */
-}
-
-
-/* --- Input Field Styling (Re-using classes where possible) --- */
 
 .form-group-item label {
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--color-text-primary);
     font-weight: 500;
 }
 
+/* Wrapper for fields that should appear on a single line */
+.form-inline-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: flex-end; /* Aligns items/buttons to the bottom line */
+}
+
+/* Input & Select Field Styling */
 .input-field {
     width: 100%;
-    padding: 10px;
+    padding: 10px 12px;
     box-sizing: border-box;
     font-family: var(--font-main);
-    background-color: var(--background-light); /* Light Gray input background */
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    background-color: var(--color-bg-body); 
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     outline: none;
-    transition: border 0.2s ease;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 .input-field:focus {
-    border-color: var(--primary-brand);
+    border-color: var(--color-interactive);
+    box-shadow: 0 0 0 3px var(--color-interactive-light);
 }
 
-/* --- Button Styling --- */
-
-.btn-add-action {
-    height: 40px; /* Standard button height */
-    padding: 0 15px;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-
-.btn-add-primary {
-    background-color: var(--primary-brand);
-    color: white;
-}
-.btn-add-secondary {
-    background-color: var(--accent-button);
-    color: white;
-}
-.btn-delete-item {
-    background-color: #D32F2F; 
-    color: white;
-    padding: 5px 10px;
-    font-size: 0.8rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-/* Table Header/Container for Category Deletion button */
-.category-manager-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-}
-
-/* --- Mobile Responsiveness for Inline Forms --- */
+/* --- Mobile Responsiveness --- */
 @media (max-width: 768px) {
-    /* Stack inline form groups horizontally */
     .form-inline-group {
-        flex-direction: column;
-        gap: 10px;
-        align-items: stretch; /* Stretch items to fill column width */
-    }
-    /* Reset flex properties for individual fields when stacked */
-    .form-inline-group .form-group-item,
-    .form-inline-group .addon-name-field, 
-    .form-inline-group .addon-price-field {
-        flex: auto;
-    }
-    /* Make buttons in inline groups full width */
-    .form-inline-group .btn-add-action {
-        width: 100%;
-        margin-top: 5px;
-    }
-    /* Ensure tables scroll if too wide */
-    .table-box {
-        overflow-x: auto;
+        grid-template-columns: 1fr; /* Stack elements */
+        gap: 16px;
     }
 }

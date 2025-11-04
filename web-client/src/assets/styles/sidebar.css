@@ -1,109 +1,158 @@
+/* === SIDEBAR & NAVIGATION STYLES === */
 .sidebar {
   display: flex; flex-direction: column; width: 240px; min-width: 240px; height: 100vh;
-  background-color: var(--background-dark); /* White background */
-  color: var(--text-primary); padding: 20px 15px;
-  position: fixed; left: 0; top: 0; box-sizing: border-box; border-right: 1px solid var(--border-color);
-  z-index: 100; /* Ensure sidebar is on top */
+  background-color: var(--color-bg-container);
+  color: var(--color-text-primary);
+  position: fixed; left: 0; top: 0; 
+  box-sizing: border-box; 
+  border-right: 1px solid var(--color-border);
+  z-index: 1000;
 }
-.sidebar-header { display: flex; align-items: center; gap: 10px; padding: 10px 15px; margin-bottom: 25px; }
-/* Explicit class for desktop header to easily hide it on mobile */
+.sidebar-header { 
+  display: flex; align-items: center; gap: 10px; 
+  padding: 20px; 
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
 .desktop-header { display: flex; } 
 
-.sidebar-logo-circle { width: 24px; height: 24px; background-color: var(--primary-brand); border-radius: 50%; } /* Use Brand Red */
-.sidebar-title { font-size: 1.25rem; font-weight: 700; margin: 0; }
-.sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
+.sidebar-logo-circle { width: 24px; height: 24px; background-color: var(--color-brand); border-radius: 50%; }
+.sidebar-title { font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--color-text-primary); }
+
+.sidebar-nav { 
+  display: flex; flex-direction: column; 
+  gap: 8px; 
+  padding: 0 15px;
+  flex-grow: 1;
+}
 .sidebar-link {
   display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 6px;
-  color: var(--text-secondary); text-decoration: none; font-size: 1rem; font-weight: 500;
-  transition: background-color 0.2s, color 0.2s; border-left: 3px solid transparent;
+  color: var(--color-text-secondary); text-decoration: none; font-size: 0.95rem; font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
 }
-.sidebar-link:hover { background-color: rgba(0, 0, 0, 0.05); color: var(--text-primary); } /* Light hover effect */
+.sidebar-link:hover { 
+  background-color: var(--color-bg-body); 
+  color: var(--color-text-primary); 
+}
 .sidebar-link.active {
-  background-color: rgba(229, 57, 53, 0.1); /* Light red background for active */
-  color: var(--primary-brand); /* Brand Red text for active */
-  font-weight: 600; border-left: 3px solid var(--primary-brand);
+  background-color: var(--color-brand-light);
+  color: var(--color-brand);
+  font-weight: 600;
 }
-.sidebar-bottom { margin-top: auto; padding: 10px; }
-.sidebar-user { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px; word-break: break-all; text-align: center; }
-.logout-btn {
-  width: 100%; padding: 10px; font-size: 1rem; font-weight: 600; background-color: transparent;
-  color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px;
-  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;
-}
-.logout-btn:hover { background-color: var(--primary-brand); color: var(--background-dark); border-color: var(--primary-brand); } /* Red hover */
-.main-content { margin-left: 240px; padding: 30px; width: calc(100% - 240px); box-sizing: border-box; }
 
+.sidebar-bottom { 
+  margin-top: auto; 
+  padding: 15px; 
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-body);
+}
+.sidebar-user { font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 12px; word-break: break-all; text-align: center; }
+.logout-btn {
+  width: 100%; padding: 10px; font-size: 0.95rem; font-weight: 600; 
+  background-color: var(--color-bg-container);
+  color: var(--color-text-secondary); 
+  border: 1px solid var(--color-border); 
+  border-radius: 6px;
+  cursor: pointer; 
+  transition: all 0.2s; 
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.logout-btn:hover { 
+  background-color: var(--color-danger); 
+  color: var(--color-text-on-brand); 
+  border-color: var(--color-danger); 
+}
+
+.main-content { 
+  margin-left: 240px; 
+  padding: 30px; 
+  width: calc(100% - 240px); 
+  box-sizing: border-box; 
+}
+
+/* Hide mobile-only elements by default */
+.mobile-header-bar, .mobile-overlay, .sidebar-mobile-header {
+    display: none;
+}
 
 /* --- Mobile-Specific Layout Overrides (Max-width 768px) --- */
 @media (max-width: 768px) {
     /* 1. Sidebar becomes an overlay menu (drawer) */
     .sidebar {
-        width: 240px; 
-        min-width: 240px;
-        left: -240px; /* Hidden off-screen */
-        top: 0;
+        left: -240px;
         transition: left 0.3s ease-in-out;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-        overflow-y: auto; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        padding: 0; /* Remove padding for internal header */
     }
-    
-    /* When is-open, show the sidebar */
     .sidebar.is-open {
         left: 0;
     }
     
-    /* 2. Main content takes full width and shifts down for fixed header */
+    /* 2. Main content takes full width and shifts down */
     .main-content {
         margin-left: 0; 
         width: 100%;
         padding: 15px; 
-        padding-top: 60px; /* Space for fixed mobile header */
+        padding-top: calc(var(--header-height-mobile) + 15px); /* Space for fixed mobile header */
     }
     
-    /* 3. The mobile header bar (hamburger menu, logo) */
+    /* 3. Show and style the top fixed mobile header bar */
     .mobile-header-bar {
         display: flex;
         align-items: center;
-        justify-content: flex-start; /* Aligns hamburger button to the left */
+        justify-content: flex-start;
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 50px;
-        background-color: var(--background-dark);
-        border-bottom: 1px solid var(--border-color);
+        top: 0; left: 0;
+        width: 100%; 
+        height: var(--header-height-mobile);
+        background-color: var(--color-bg-container);
+        border-bottom: 1px solid var(--color-border);
         padding: 0 15px;
-        z-index: 101; /* Must be highest z-index */
+        z-index: 101;
         box-sizing: border-box;
     }
-
-    /* Adjust the spacing of the mobile logo area */
-    .mobile-logo-area {
-        margin-left: 15px !important; /* Space between hamburger and logo */
+    .hamburger-btn {
+        background: none; border: none; cursor: pointer; padding: 10px; color: var(--color-brand);
+    }
+    .mobile-header-title {
+        display: flex; align-items: center; gap: 10px;
+        flex: 1; justify-content: center;
+        padding-right: 40px; /* Make space for the hamburger button */
     }
 
-    /* Hide the original desktop header */
-    .desktop-header {
-        display: none;
-    }
-    
-    /* 4. Overlay for when the menu is open */
+    /* 4. Show the overlay */
     .mobile-overlay {
+        display: block;
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
         z-index: 99;
-        display: block; 
     }
-}
-
-/* Default (Desktop) styles */
-.mobile-header-bar {
-    display: none;
-}
-.mobile-overlay {
-    display: none;
+    
+    /* 5. Hide desktop header, show mobile header *inside* sidebar */
+    .sidebar .desktop-header {
+        display: none;
+    }
+    .sidebar-mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--color-border);
+        min-height: var(--header-height-mobile); /* Match top bar height */
+    }
+    .sidebar-header-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .sidebar-close-btn {
+        background: none; border: none; cursor: pointer;
+        color: var(--color-text-secondary); padding: 5px;
+    }
+    
+    /* Add padding back to nav/bottom sections */
+    .sidebar-nav { padding: 15px; }
+    .sidebar-bottom { padding: 15px; }
 }

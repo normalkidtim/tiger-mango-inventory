@@ -3,10 +3,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
-// Import necessary icons, including new ones for status badges
 import { FiShoppingCart, FiCalendar, FiCheckCircle, FiXCircle, FiUser } from "react-icons/fi"; 
 
-// Helper function to format prices like the mobile client (₱xx.xx)
+// Helper function to format prices
 const formatPrice = (price) => `₱${(price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function PurchaseHistory() {
@@ -17,7 +16,6 @@ export default function PurchaseHistory() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch ALL orders ordered by creation time, descending
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -57,7 +55,7 @@ export default function PurchaseHistory() {
   // Helper Component for the Filter Buttons
   const FilterButton = ({ status, label }) => (
     <button
-      className={`btn-filter ${filterStatus === status ? 'btn-active' : 'btn-outline'}`}
+      className={`btn-filter ${filterStatus === status ? 'btn-active' : ''}`}
       onClick={() => setFilterStatus(status)}
     >
       {label}
@@ -68,57 +66,47 @@ export default function PurchaseHistory() {
   // Component for a single Order Card (New Card Design)
   const OrderCard = ({ order }) => {
     const d = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
-    // Format timestamp including date and time
     const timestamp = d.toLocaleDateString('en-US') + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    const cashierName = order.cashier || 'N/A'; // Get cashier name
-
+    const cashierName = order.cashier || 'N/A';
     const isVoided = order.status === 'Voided';
-    const StatusIcon = isVoided ? FiXCircle : FiCheckCircle;
     
-    // Using the same colors as the mobile client's styles.js
-    const STATUS_COLORS = {
-        COMPLETED_COLOR: '#4CAF50',
-        VOIDED_COLOR: 'var(--primary-brand)', 
-    }
-    const statusColor = isVoided ? STATUS_COLORS.VOIDED_COLOR : STATUS_COLORS.COMPLETED_COLOR; 
-    const statusBgColor = isVoided ? 'rgba(229, 57, 53, 0.1)' : 'rgba(76, 175, 80, 0.1)';
+    const statusClassName = isVoided ? 'voided' : 'completed';
+    const StatusIcon = isVoided ? FiXCircle : FiCheckCircle;
 
     return (
       <div className="order-card-history">
         {/* Header with Status Badge and Timestamp */}
         <div className="card-header-history">
-          <div className="status-badge" style={{ backgroundColor: statusBgColor }}>
-             <StatusIcon size={16} style={{ color: statusColor }} />
-             <span className="status-text" style={{ color: statusColor }}>{order.status}</span>
+          <div className={`status-badge ${statusClassName}`}>
+             <StatusIcon size={16} />
+             <span>{order.status}</span>
           </div>
           <span className="timestamp-text">
-            <FiCalendar size={12} style={{ marginRight: '5px' }} /> {timestamp}
+            <FiCalendar size={12} /> {timestamp}
           </span>
         </div>
         
-        {/* NEW: Cashier Row */}
-        <div className="content-row-history" style={{ marginBottom: '5px' }}>
-            <span className="order-total-text" style={{ fontWeight: '600' }}><FiUser size={14} style={{ marginRight: '5px' }} /> Cashier:</span>
-            <span className="order-total-value" style={{ fontWeight: 'normal' }}>{cashierName}</span>
+        {/* Body with Cashier and Total */}
+        <div className="card-body-history">
+            <div className="content-row-history">
+                <span className="label"><FiUser size={14} /> Cashier:</span>
+                <span className="value">{cashierName}</span>
+            </div>
+            <div className="content-row-history">
+                <span className="label">Total Price:</span>
+                <span className="value total">{formatPrice(order.totalPrice)}</span>
+            </div>
         </div>
 
-        {/* Total Price Row */}
-        <div className="content-row-history">
-            <span className="order-total-text">Total Price:</span>
-            <span className="order-total-value">{formatPrice(order.totalPrice)}</span>
-        </div>
-
-        {/* Items Container */}
+        {/* Footer (Items Container) */}
         <div className="items-container-history">
             {(order.items || []).map((item, index) => (
                 <div key={index} className="item-row-history">
                     <div className="item-details-history">
-                        {/* Mobile client uses an explicit category name, which is supported by the order data */}
                         <span className="item-category-name">{item.categoryName}</span>
                         <span className="item-name-history">{item.quantity}x {item.name} ({item.size})</span>
                     </div>
                     {(item.addons && item.addons.length > 0) && (
-                        // MODIFIED: Show add-on quantity
                         <span className="item-addons-history">+{item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}</span>
                     )}
                 </div>
@@ -135,7 +123,7 @@ export default function PurchaseHistory() {
       <div className="page-header"><FiShoppingCart /><h2>Purchase History</h2></div>
       <div className="page-header-underline"></div>
 
-      {/* Date Range Filter Bar (Kept from old design) */}
+      {/* Date Range Filter Bar */}
       <div className="filter-bar">
         <div className="filter-group">
           <FiCalendar />
@@ -146,12 +134,12 @@ export default function PurchaseHistory() {
           <label>To:</label>
           <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
-        <button className="btn btn-outline" onClick={() => { setStartDate(""); setEndDate(""); }}>
-          Clear Date Filter
+        <button className="btn-filter btn-outline" onClick={() => { setStartDate(""); setEndDate(""); }}>
+          Clear
         </button>
       </div>
 
-      {/* Status Filter Bar (New, matching mobile layout) */}
+      {/* Status Filter Bar */}
       <div className="filter-bar status-filter-bar">
           <FilterButton status="All" label="All" />
           <FilterButton status="Completed" label="Completed" />

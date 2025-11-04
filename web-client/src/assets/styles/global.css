@@ -1,48 +1,169 @@
+/* === GLOBAL STYLES (NEW DESIGN) === */
 :root {
-  /*
-   * MOBILE THEME (Primary: #E53935 / Accent: #0052cc)
-   */
-  --background-dark: #FFFFFF; /* White */
-  --background-light: #F4F5F7; /* Light Gray (Used for content blocks/cards) */
+  /* 1. Professional Color Palette */
+  --color-brand: #E53935;         /* Tealicieux Red (Primary Accent) */
+  --color-brand-light: #FBECEB;   /* Light red background */
+  --color-interactive: #0065ff;   /* Professional Blue (Links, Secondary Buttons) */
+  --color-interactive-light: #E6F0FF; /* Light blue background */
   
-  --primary-brand: #E53935; /* Mobile's Brand Red */
-  --accent-button: #0065ff; /* Mobile's Primary Button Blue */
+  /* Text */
+  --color-text-primary: #172B4D;   /* Dark Blue/Black */
+  --color-text-secondary: #5E6C84; /* Medium Gray */
+  --color-text-on-brand: #FFFFFF; /* White (for text on red buttons) */
+
+  /* Neutrals */
+  --color-bg-body: #F7F8FA;       /* Very light gray page background */
+  --color-bg-container: #FFFFFF;  /* White for cards, sidebars */
+  --color-border: #dfe1e6;        /* Light, subtle border */
   
-  --text-primary: #172b4d; /* Dark Text */
-  --text-secondary: #5e6c84; /* Gray Text */
-  
-  --border-color: #dfe1e6; /* Light Gray Border */
-  
-  /* Retain font from old style */
-  --font-main: 'Inter', 'Segoe UI', sans-serif;
+  /* System Colors */
+  --color-success: #0E8A16;        /* Green */
+  --color-success-light: #E7F3E8;
+  --color-danger: #D93025;         /* Red (for errors/delete) */
+  --color-danger-light: #FBEAE9;
+
+  /* 3. Global Settings */
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --card-border-radius: 8px;
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --header-height-mobile: 60px;
 }
-html { font-size: 17px; }
+
+/* 2. Reset and Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html { 
+  font-size: 16px; 
+}
 body {
-  margin: 0; padding: 0; font-family: var(--font-main);
-  background-color: var(--background-light); /* Light background */
-  color: var(--text-primary); 
+  margin: 0; padding: 0;
+  font-family: var(--font-main);
+  background-color: var(--color-bg-body);
+  color: var(--color-text-primary); 
   line-height: 1.6;
 }
-h1, h2, h3, h4, h5, h6 { margin: 0 0 1rem 0; font-weight: 600; color: var(--text-primary); }
-h2 { font-size: 1.75rem; }
-.page-header { display: flex; align-items: center; gap: 12px; font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; color: var(--primary-brand); } /* Use brand color for header */
-.page-header-underline { height: 3px; width: 100%; background: var(--primary-brand); border-radius: 2px; margin-bottom: 24px; }
 
-/* --- Mobile-Specific Styles (Max-width 768px for tablets/mobile) --- */
+/* --- 3. Reusable Global Classes --- */
+
+/* The new "Card" component style */
+.card {
+  background-color: var(--color-bg-container);
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  margin-bottom: 24px;
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.card-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-text-primary);
+}
+.card-content {
+  padding: 20px;
+}
+.card-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-body);
+}
+
+/* Standardized Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--color-brand);
+  color: var(--color-text-on-brand);
+}
+.btn-primary:hover {
+  background-color: #C62828; /* Darker Red */
+}
+
+.btn-secondary {
+  background-color: var(--color-interactive);
+  color: #FFFFFF;
+}
+.btn-secondary:hover {
+  background-color: #0052cc; /* Darker Blue */
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #FFFFFF;
+}
+.btn-danger:hover {
+  background-color: #B71C1C; /* Darker Danger */
+}
+
+.btn-outline {
+  background-color: var(--color-bg-container);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.btn-outline:hover {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+}
+
+/* Responsive Grid Containers */
+.grid-container {
+  display: grid;
+  gap: 24px;
+}
+.grid-col-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-col-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-col-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* --- Page Header --- */
+.page-header { 
+  display: flex; align-items: center; gap: 12px; 
+  font-size: 1.75rem; font-weight: 700; 
+  margin-bottom: 24px; 
+  color: var(--color-text-primary); /* Changed from red to primary text */
+}
+.page-header svg {
+  color: var(--color-brand); /* Icon is red */
+}
+/* Removed the red underline for a cleaner look */
+.page-header-underline { 
+  display: none;
+}
+
+/* --- Mobile-Specific Styles --- */
 @media (max-width: 768px) {
-    html {
-        font-size: 15px; /* Slightly smaller base font for mobile */
-    }
     .page-header {
-        /* Set a small margin to ensure it starts below the fixed mobile header */
-        margin-top: 5px; 
         font-size: 1.5rem;
+        margin-bottom: 16px;
     }
     .page-header h2 {
         font-size: 1.5rem;
     }
-    /* Reduce margin/padding on mobile screens */
-    .page-header-underline {
-        margin-bottom: 15px;
+    
+    /* Stack all grids */
+    .grid-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 }

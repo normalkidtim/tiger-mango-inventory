@@ -2,7 +2,9 @@
 
 .filter-bar {
   display: flex;
+  flex-wrap: wrap; /* Allow filters to wrap on small screens */
   align-items: center;
+  justify-content: space-between; /* Space out groups */
   gap: 16px;
   padding: 16px;
   background-color: var(--background-dark);
@@ -44,6 +46,10 @@
   color: var(--text-secondary);
 }
 
+.filter-group label {
+  font-weight: 500;
+}
+
 .filter-group input[type="date"],
 .filter-group input[type="text"] {
   font-family: var(--font-main);
@@ -53,11 +59,12 @@
   border-radius: 6px;
   padding: 8px 10px;
   outline: none;
+  width: 150px; /* Give date inputs a consistent size */
 }
 
 /* Style for the date picker icon */
 .filter-group input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0); /* Default color for light theme */
+  filter: invert(0.5); /* Make it gray */
   cursor: pointer;
 }
 
