@@ -1,7 +1,5 @@
 /* web-client/src/assets/styles/admin.css */
 
-
-
 /* --- Section Headers --- */
 
 .admin-section {
@@ -40,7 +38,12 @@
 
 }
 
-
+/* NEW: Two-Column Form Row - Desktop */
+.form-row-2-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
 
 .no-data-admin {
 
@@ -506,4 +509,29 @@
 
     font-weight: 500;
 
+}
+
+/* --- Mobile Responsiveness (Max-width 768px) --- */
+@media (max-width: 768px) {
+    /* Stack two-column grid forms */
+    .form-row-2-col {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    /* Ensure the user grid stacks cards correctly */
+    .user-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    /* Stack the read-only actions buttons vertically */
+    .read-only-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .read-only-actions .btn-action-half {
+        flex: auto;
+        width: 100%;
+    }
 }

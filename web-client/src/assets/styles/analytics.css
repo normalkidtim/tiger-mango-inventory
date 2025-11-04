@@ -163,3 +163,18 @@
 .ranking-list li.no-data-item:before {
     content: none;
 }
+
+/* --- Mobile Responsiveness (Max-width 768px) --- */
+@media (max-width: 768px) {
+    /* Stack all main grids into a single column */
+    .stats-grid,
+    .charts-grid,
+    .ranking-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    /* Charts grid should only have 1 column on mobile to stack */
+    .charts-grid[style*="grid-template-columns: 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}

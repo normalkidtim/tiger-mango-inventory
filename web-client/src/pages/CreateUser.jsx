@@ -34,7 +34,7 @@ export default function CreateUser() {
     
     if (!isAdminCreating) {
         // This should not happen if accessed through the sidebar, but kept for safety.
-        return setError('Access Denied. Only Administrators can create new accounts.');
+        return setError('Access denied. Only Administrators can create new accounts.');
     }
 
     try {
@@ -94,7 +94,8 @@ export default function CreateUser() {
                 {success && <div className="success-message">{success}</div>}
                 
                 <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-row">
+                    {/* First Name / Last Name Row */}
+                    <div className="form-row-2-col"> 
                         <div className="form-group half">
                             <label>First Name *</label>
                             <input
@@ -153,7 +154,8 @@ export default function CreateUser() {
                         </select>
                     </div>
                     
-                    <div className="form-row">
+                    {/* Password / Confirm Password Row */}
+                    <div className="form-row-2-col"> 
                         <div className="form-group half">
                             <label>Password * (min 6 chars)</label>
                             <input

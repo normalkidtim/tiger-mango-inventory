@@ -102,7 +102,7 @@ export default function MenuManager() {
       console.error('Error saving menu:', error);
       setSaveStatus(`❌ Failed to save menu: ${error.message}`);
     } finally {
-      setIsSaving(false);
+      setTimeout(() => setIsSaving(false), 500); // Small delay to show saving status
       setTimeout(() => setSaveStatus(''), 5000);
     }
   };
@@ -325,7 +325,7 @@ export default function MenuManager() {
       )}
 
       {/* --- ADD NEW CATEGORY & PRODUCT SECTION --- */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
+      <div className="form-row-2-col" style={{ marginBottom: '40px' }}>
         
         {/* Add New Series/Category */}
         <div className="manager-form-container">

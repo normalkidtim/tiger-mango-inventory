@@ -16,3 +16,12 @@
 .inventory-item-stock input:focus { border-color: var(--gold-accent); box-shadow: 0 0 0 3px rgba(255, 202, 40, 0.2); }
 .inventory-item-stock input::-webkit-outer-spin-button, .inventory-item-stock input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .no-items-message { padding: 20px; text-align: center; color: var(--text-secondary); font-style: italic; }
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    /* Inventory Grids stack vertically on mobile */
+    .inventory-sections {
+        grid-template-columns: 1fr; /* Single column */
+        gap: 15px; /* Reduced gap */
+    }
+}

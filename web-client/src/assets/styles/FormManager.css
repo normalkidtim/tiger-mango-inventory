@@ -105,3 +105,28 @@
     align-items: center;
     padding: 10px 0;
 }
+
+/* --- Mobile Responsiveness for Inline Forms --- */
+@media (max-width: 768px) {
+    /* Stack inline form groups horizontally */
+    .form-inline-group {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch; /* Stretch items to fill column width */
+    }
+    /* Reset flex properties for individual fields when stacked */
+    .form-inline-group .form-group-item,
+    .form-inline-group .addon-name-field, 
+    .form-inline-group .addon-price-field {
+        flex: auto;
+    }
+    /* Make buttons in inline groups full width */
+    .form-inline-group .btn-add-action {
+        width: 100%;
+        margin-top: 5px;
+    }
+    /* Ensure tables scroll if too wide */
+    .table-box {
+        overflow-x: auto;
+    }
+}

@@ -27,3 +27,22 @@ h1, h2, h3, h4, h5, h6 { margin: 0 0 1rem 0; font-weight: 600; color: var(--text
 h2 { font-size: 1.75rem; }
 .page-header { display: flex; align-items: center; gap: 12px; font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; color: var(--primary-brand); } /* Use brand color for header */
 .page-header-underline { height: 3px; width: 100%; background: var(--primary-brand); border-radius: 2px; margin-bottom: 24px; }
+
+/* --- Mobile-Specific Styles (Max-width 768px for tablets/mobile) --- */
+@media (max-width: 768px) {
+    html {
+        font-size: 15px; /* Slightly smaller base font for mobile */
+    }
+    .page-header {
+        /* Reduce margin-top on mobile since main-content has 60px padding-top */
+        margin-top: 0; 
+        font-size: 1.5rem;
+    }
+    .page-header h2 {
+        font-size: 1.5rem;
+    }
+    /* Reduce margin/padding on mobile screens */
+    .page-header-underline {
+        margin-bottom: 15px;
+    }
+}

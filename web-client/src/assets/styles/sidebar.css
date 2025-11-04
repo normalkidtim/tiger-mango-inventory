@@ -3,6 +3,7 @@
   background-color: var(--background-dark); /* White background */
   color: var(--text-primary); padding: 20px 15px;
   position: fixed; left: 0; top: 0; box-sizing: border-box; border-right: 1px solid var(--border-color);
+  z-index: 100; /* Ensure sidebar is on top */
 }
 .sidebar-header { display: flex; align-items: center; gap: 10px; padding: 10px 15px; margin-bottom: 25px; }
 .sidebar-logo-circle { width: 24px; height: 24px; background-color: var(--primary-brand); border-radius: 50%; } /* Use Brand Red */
@@ -28,3 +29,72 @@
 }
 .logout-btn:hover { background-color: var(--primary-brand); color: var(--background-dark); border-color: var(--primary-brand); } /* Red hover */
 .main-content { margin-left: 240px; padding: 30px; width: calc(100% - 240px); box-sizing: border-box; }
+
+
+/* --- Mobile-Specific Layout Overrides (Max-width 768px) --- */
+@media (max-width: 768px) {
+    /* 1. Sidebar becomes an overlay menu on small screens */
+    .sidebar {
+        width: 240px; /* Fixed width for the drawer */
+        min-width: 240px;
+        left: -240px; /* Initially hidden off-screen */
+        transition: left 0.3s ease-in-out;
+        border-right: 1px solid var(--border-color);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* When active, show the sidebar (Menu is open) */
+    .sidebar.is-open {
+        left: 0;
+    }
+    
+    /* 2. Main content takes full width and reduces padding */
+    .main-content {
+        margin-left: 0; /* Remove the desktop margin offset */
+        width: 100%;
+        padding: 15px; /* Smaller padding on mobile */
+        padding-top: 60px; /* Make space for the new mobile header */
+    }
+    
+    /* 3. The new mobile header bar (hamburger menu, logo) */
+    .mobile-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        background-color: var(--background-dark);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0 15px;
+        z-index: 100; /* Must be same or higher than sidebar for button to be clickable */
+        box-sizing: border-box;
+    }
+    
+    /* 4. Overlay for when the menu is open to block content */
+    .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 99;
+        display: block; /* Show only on mobile when needed */
+    }
+
+    /* Hide the sidebar header/logo when mobile header bar is active to avoid duplication */
+    .sidebar-header {
+        display: none;
+    }
+}
+
+/* Default to hidden on desktop */
+.mobile-header-bar {
+    display: none;
+}
+.mobile-overlay {
+    display: none;
+}

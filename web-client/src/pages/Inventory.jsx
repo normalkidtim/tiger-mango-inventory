@@ -204,7 +204,7 @@ export default function Inventory() {
       )}
 
       {/* --- ADD NEW CATEGORY & ITEM FORMS --- */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
+      <div className="form-row-2-col" style={{ marginBottom: '40px' }}>
         
         {/* Add New Stock Category (Document) */}
         <div className="manager-form-container">
