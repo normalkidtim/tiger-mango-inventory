@@ -34,8 +34,8 @@ h2 { font-size: 1.75rem; }
         font-size: 15px; /* Slightly smaller base font for mobile */
     }
     .page-header {
-        /* Reduce margin-top on mobile since main-content has 60px padding-top */
-        margin-top: 0; 
+        /* Set a small margin to ensure it starts below the fixed mobile header */
+        margin-top: 5px; 
         font-size: 1.5rem;
     }
     .page-header h2 {

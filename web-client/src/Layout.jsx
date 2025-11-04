@@ -21,10 +21,8 @@ export default function Layout() {
   
   // Close and navigate (used by NavLinks)
   const handleNavLinkClick = () => {
-      // Close sidebar only if it's currently open (on mobile)
-      if (window.innerWidth <= 768 && isSidebarOpen) { 
-          setIsSidebarOpen(false);
-      }
+      // Close sidebar regardless of screen size after navigation if it was open
+      setIsSidebarOpen(false);
   };
 
 
@@ -51,8 +49,8 @@ export default function Layout() {
       {/* SIDEBAR: The collapsible navigation menu */}
       <aside className={`sidebar ${isSidebarOpen ? 'is-open' : ''}`}> 
         
-        {/* Desktop Sidebar Header (Hidden on Mobile) */}
-        <div className="sidebar-header">
+        {/* Desktop Sidebar Header (Visible only on Desktop) */}
+        <div className="sidebar-header desktop-header">
           <div className="sidebar-logo-circle"></div>
           <h2 className="sidebar-title">Tealicieux</h2>
         </div>
