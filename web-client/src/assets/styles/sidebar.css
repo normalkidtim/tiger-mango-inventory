@@ -41,6 +41,8 @@
         transition: left 0.3s ease-in-out;
         border-right: 1px solid var(--border-color);
         box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+        /* Ensure it scrolls if content is too long */
+        overflow-y: auto; 
     }
     
     /* When active, show the sidebar (Menu is open) */
@@ -69,8 +71,15 @@
         background-color: var(--background-dark);
         border-bottom: 1px solid var(--border-color);
         padding: 0 15px;
-        z-index: 100; /* Must be same or higher than sidebar for button to be clickable */
+        z-index: 101; /* Z-index must be higher than everything else */
         box-sizing: border-box;
+    }
+
+    .mobile-header-bar .sidebar-header {
+        /* Re-show the header inside the mobile bar for the logo */
+        display: flex; 
+        padding: 0;
+        margin: 0;
     }
     
     /* 4. Overlay for when the menu is open to block content */
@@ -84,8 +93,8 @@
         z-index: 99;
         display: block; /* Show only on mobile when needed */
     }
-
-    /* Hide the sidebar header/logo when mobile header bar is active to avoid duplication */
+    
+    /* Hide the desktop-only sidebar header/logo */
     .sidebar-header {
         display: none;
     }
