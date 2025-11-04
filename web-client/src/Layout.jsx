@@ -31,29 +31,34 @@ export default function Layout() {
   return (
     <div style={{ display: "flex" }}>
       
-      {/* --- NEW: Mobile Header Bar --- */}
+      {/* --- MOBILE HEADER BAR: Contains the Hamburger Icon --- */}
       <div className="mobile-header-bar">
+        {/* Hamburger/Close Button */}
         <button className="hamburger-btn" onClick={toggleSidebar} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
             {/* Show X icon when menu is open, otherwise show hamburger */}
             {isSidebarOpen ? <FiX size={24} color="var(--primary-brand)" /> : <FiMenu size={24} color="var(--primary-brand)" />}
         </button>
+        {/* App Title/Logo for the Mobile Header */}
         <div className="sidebar-header" style={{ margin: 0 }}>
           <div className="sidebar-logo-circle"></div>
           <h2 className="sidebar-title" style={{ color: 'var(--text-primary)' }}>Tealicieux</h2>
         </div>
       </div>
       
-      {/* NEW: Mobile Overlay */}
+      {/* MOBILE OVERLAY: Dims the background when menu is open */}
       {isSidebarOpen && <div className="mobile-overlay" onClick={toggleSidebar}></div>}
 
+      {/* SIDEBAR: The collapsible navigation menu */}
       <aside className={`sidebar ${isSidebarOpen ? 'is-open' : ''}`}> 
         
+        {/* Desktop Sidebar Header (Hidden on Mobile) */}
         <div className="sidebar-header">
           <div className="sidebar-logo-circle"></div>
           <h2 className="sidebar-title">Tealicieux</h2>
         </div>
+
+        {/* Navigation Links */}
         <nav className="sidebar-nav">
-          {/* Add onClick handler to close sidebar after navigation */}
           <NavLink to="/" className="sidebar-link" onClick={handleNavLinkClick}><FiGrid /> Inventory</NavLink>
           <NavLink to="/purchase-history" className="sidebar-link" onClick={handleNavLinkClick}><FiShoppingCart /> Purchase History</NavLink>
           <NavLink to="/stock-logs" className="sidebar-link" onClick={handleNavLinkClick}><FiFileText /> Stock Logs</NavLink>
@@ -70,11 +75,15 @@ export default function Layout() {
             </>
           )}
         </nav>
+        
+        {/* Logout Button */}
         <div className="sidebar-bottom">
           {currentUser && <p className="sidebar-user">{currentUser.displayName || currentUser.email}</p>}
           <button onClick={() => { handleLogout(); handleNavLinkClick(); }} className="logout-btn"><FiLogOut />Logout</button>
         </div>
       </aside>
+      
+      {/* Main Content Area */}
       <main className="main-content">
         <Outlet />
       </main>

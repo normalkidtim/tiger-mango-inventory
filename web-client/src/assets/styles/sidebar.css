@@ -43,6 +43,7 @@
         box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
         /* Ensure it scrolls if content is too long */
         overflow-y: auto; 
+        top: 0; /* Align to the very top */
     }
     
     /* When active, show the sidebar (Menu is open) */
@@ -55,7 +56,7 @@
         margin-left: 0; /* Remove the desktop margin offset */
         width: 100%;
         padding: 15px; /* Smaller padding on mobile */
-        padding-top: 60px; /* Make space for the new mobile header */
+        padding-top: 60px; /* Make space for the new fixed mobile header */
     }
     
     /* 3. The new mobile header bar (hamburger menu, logo) */
@@ -75,11 +76,16 @@
         box-sizing: border-box;
     }
 
+    /* Re-style the header content for the mobile bar */
     .mobile-header-bar .sidebar-header {
-        /* Re-show the header inside the mobile bar for the logo */
         display: flex; 
         padding: 0;
-        margin: 0;
+        margin: 0 0 0 auto; /* Push the logo to the right, keeping space for the button */
+    }
+
+    /* Hide the desktop-only sidebar header/logo */
+    .sidebar-header {
+        display: none;
     }
     
     /* 4. Overlay for when the menu is open to block content */
@@ -92,11 +98,6 @@
         background-color: rgba(0, 0, 0, 0.5);
         z-index: 99;
         display: block; /* Show only on mobile when needed */
-    }
-    
-    /* Hide the desktop-only sidebar header/logo */
-    .sidebar-header {
-        display: none;
     }
 }
 
