@@ -1,13 +1,7 @@
 /* src/assets/styles/filters.css */
 
 .filter-bar {
-  /* Use the global card style */
-  background-color: var(--c-bg-card);
-  border: 1px solid var(--c-border);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  margin-bottom: 24px;
-  
+  /* This gets .card styles globally */
   /* Layout */
   display: flex;
   flex-wrap: wrap; 
@@ -45,13 +39,17 @@
     font-weight: 600;
 }
 .btn-filter.btn-outline {
-  background-color: transparent;
+  /* This is just .btn-secondary from global.css */
+  background-color: var(--c-bg-card);
+  color: var(--c-text-primary);
   border-color: var(--c-border);
+  height: 44px;
+  border-radius: 8px;
 }
 .btn-filter.btn-outline:hover {
-  border-color: var(--c-text-primary);
-  color: var(--c-text-primary);
   background-color: var(--c-bg-body);
+  border-color: #D1D5DB;
+  color: var(--c-text-primary);
 }
 
 
@@ -68,15 +66,24 @@
 }
 .filter-group input[type="date"],
 .filter-group input[type="text"] {
+  /* Gets styles from .input-field in global.css */
   font-family: var(--font-main);
-  background-color: var(--c-bg-body);
+  background-color: var(--c-bg-body); /* UPDATED */
   color: var(--c-text-primary);
-  border: 1px solid var(--c-border);
-  border-radius: 6px;
+  border: 1px solid transparent; /* UPDATED */
+  border-radius: 8px;
   padding: 8px 10px;
   outline: none;
   width: 160px;
+  transition: all 0.2s;
 }
+.filter-group input[type="date"]:focus,
+.filter-group input[type="text"]:focus {
+  background-color: var(--c-bg-card);
+  border-color: var(--c-brand);
+  box-shadow: 0 0 0 3px var(--c-brand-light);
+}
+
 .filter-group input[type="text"] {
     width: 250px;
 }

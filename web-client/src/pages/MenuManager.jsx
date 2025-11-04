@@ -237,7 +237,7 @@ export default function MenuManager() {
 
   if (loading || !menu) {
     return (
-      <div>
+      <div className="page-container"> {/* ADDED WRAPPER */}
         <div className="page-header"><FiEdit /><h2>Menu Management</h2></div>
         <div className="page-header-underline"></div>
         <p className="no-data">Loading menu data...</p>
@@ -246,7 +246,7 @@ export default function MenuManager() {
   }
 
   return (
-    <div>
+    <div className="page-container"> {/* ADDED WRAPPER */}
       <div className="page-header"><FiEdit /><h2>Menu Management</h2></div>
       <div className="page-header-underline"></div>
 
@@ -357,7 +357,7 @@ export default function MenuManager() {
             </div>
 
             {/* --- ADD-ONS PRICE LIST TABLE --- */}
-            <div className="card no-padding" style={{ margin: 0 }}>
+            <div className="card no-padding" style={{ margin: 0, boxShadow: 'none' }}>
               <div className="card-body">
                 <table>
                   <thead>
@@ -385,7 +385,7 @@ export default function MenuManager() {
                                 <td>
                                     <button
                                         onClick={() => handleDeleteAddon(addon.id, addon.name)}
-                                        className="btn-danger"
+                                        className="btn btn-danger"
                                         style={{ height: '36px', padding: '0 10px' }}
                                         title={`Delete ${addon.name}`}
                                     >
@@ -413,7 +413,7 @@ export default function MenuManager() {
             <h3>Category: {category.name}</h3>
             <button 
               onClick={() => handleDeleteCategory(category.id, category.name)}
-              className="btn-danger"
+              className="btn btn-danger"
               style={{ height: '36px', padding: '0 12px', fontSize: '0.9rem' }}
               title={`Delete the entire ${category.name} category`}
             >
@@ -460,7 +460,7 @@ export default function MenuManager() {
                       <td>
                         <button
                           onClick={() => handleDeleteProduct(category.id, product.id, product.name)}
-                          className="btn-danger"
+                          className="btn btn-danger"
                           style={{ height: '36px', padding: '0 10px' }}
                           title={`Delete ${product.name}`}
                         >

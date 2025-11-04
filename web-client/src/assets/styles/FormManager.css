@@ -1,8 +1,6 @@
 /* web-client/src/assets/styles/FormManager.css */
 
-/* The main .manager-form-container is now just a global .card.
-  We only need to style the content *inside* it.
-*/
+/* Most styles are now in global.css */
 
 /* Container for grouping inline fields */
 .form-group-item {
@@ -35,69 +33,26 @@
     flex: 1;
 }
 
-/* --- Button Styling --- */
-/* We now use global .btn .btn-primary, etc. */
-/* This file can be simplified if buttons are updated in JSX, */
-/* but these overrides will still work. */
-
-.btn-add-action {
-    height: 44px;
-    padding: 0 20px;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-.btn-add-primary {
-  background-color: var(--c-brand);
-  color: white;
-}
-.btn-add-secondary {
-  background-color: var(--c-blue);
-  color: white;
-}
-.btn-delete-item {
-    background-color: var(--c-brand-light);
-    color: var(--c-brand-dark);
-    padding: 5px 10px;
-    font-size: 0.8rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-}
-.btn-delete-item:hover {
-    background-color: #FEE2E2;
-    color: #B91C1C;
-}
-
-.category-manager-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 16px;
+/* For 2-col forms like Add Product/Category */
+.form-row-2-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
 }
 
 /* --- Mobile Responsiveness for Inline Forms --- */
 @media (max-width: 768px) {
+    .form-row-2-col {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
     .form-inline-group {
         flex-direction: column;
         gap: 16px;
         align-items: stretch;
     }
-    .form-inline-group .btn-add-action {
+    .form-inline-group .btn {
         width: 100%;
         margin-top: 5px;
-    }
-    
-    .category-manager-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
     }
 }

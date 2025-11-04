@@ -1,21 +1,22 @@
-/* --- Base Sidebar Styles --- */
+/* --- Base Sidebar Styles (LIGHT MODE) --- */
 .sidebar {
   display: flex; flex-direction: column; width: 240px; min-width: 240px; height: 100vh;
-  background-color: var(--c-bg-card);
+  background-color: var(--c-bg-card); /* White background */
   color: var(--c-text-primary); padding: 20px 15px;
   position: fixed; left: 0; top: 0; box-sizing: border-box; 
-  border-right: 1px solid var(--c-border);
+  border-right: none; 
+  box-shadow: 4px 0 15px -3px rgba(0, 0, 0, 0.05);
   z-index: 100;
 }
 .sidebar-header { 
   display: flex; align-items: center; gap: 10px; 
   padding: 10px 15px; margin-bottom: 25px; 
 }
-.desktop-header { display: flex; } /* Show desktop header by default */
+.desktop-header { display: flex; } 
 
 .sidebar-logo-circle { 
   width: 24px; height: 24px; 
-  background-color: var(--c-brand); 
+  background-color: var(--c-brand); /* Teal logo */
   border-radius: 50%; 
 }
 .sidebar-title { 
@@ -25,7 +26,8 @@
 .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
 .sidebar-link {
   display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 8px;
-  color: var(--c-text-secondary); text-decoration: none; 
+  color: var(--c-text-secondary); 
+  text-decoration: none; 
   font-size: 1rem; font-weight: 500;
   transition: background-color 0.2s, color 0.2s;
 }
@@ -34,9 +36,9 @@
   color: var(--c-text-primary); 
 }
 .sidebar-link.active {
-  background-color: var(--c-brand-light);
-  color: var(--c-brand);
-  font-weight: 600;
+  background-color: var(--c-brand-light); /* Light Teal */
+  color: var(--c-brand); /* Dark Teal */
+  font-weight: 700; 
 }
 .sidebar-bottom { margin-top: auto; padding: 10px; }
 .sidebar-user { 
@@ -44,22 +46,15 @@
   word-break: break-all; text-align: center; font-weight: 500;
 }
 .logout-btn {
-  width: 100%; padding: 10px; font-size: 1rem; font-weight: 600; 
-  background-color: var(--c-bg-body);
-  color: var(--c-text-secondary); 
-  border: 1px solid var(--c-border); 
-  border-radius: 8px;
-  cursor: pointer; transition: all 0.2s; 
-  display: flex; align-items: center; justify-content: center; gap: 5px;
+  /* Uses .btn .btn-secondary from global.css */
+  width: 100%;
 }
-.logout-btn:hover { 
-  background-color: var(--c-brand-light); 
-  color: var(--c-brand); 
-  border-color: var(--c-brand-light); 
-}
+
 .main-content { 
-  margin-left: 240px; padding: 30px; 
-  width: calc(100% - 240px); box-sizing: border-box; 
+  margin-left: 240px; 
+  padding: 30px; 
+  /* UPDATED: Removed the explicit width calculation */
+  box-sizing: border-box; 
   background-color: var(--c-bg-body);
   min-height: 100vh;
 }
@@ -75,7 +70,7 @@
         left: -240px;
         transition: left 0.3s ease-in-out;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-        padding: 0; /* Remove padding to allow internal header to span full width */
+        padding: 0;
     }
     .sidebar.is-open {
         left: 0;
@@ -83,9 +78,9 @@
     
     .main-content {
         margin-left: 0; 
-        width: 100%;
+        width: 100%; /* UPDATED: Explicitly set 100% width on mobile */
         padding: 15px; 
-        padding-top: 65px; /* Space for fixed 50px header + 15px padding */
+        padding-top: 65px; 
     }
     
     .mobile-header-bar {

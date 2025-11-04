@@ -106,7 +106,7 @@ export default function PurchaseHistory() {
   };
 
   return (
-    <div>
+    <div className="page-container"> {/* ADDED WRAPPER */}
       <div className="page-header"><FiShoppingCart /><h2>Purchase History</h2></div>
       <div className="page-header-underline"></div>
 
@@ -115,11 +115,11 @@ export default function PurchaseHistory() {
         <div className="filter-group">
           <FiCalendar />
           <label>From:</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-field" />
         </div>
         <div className="filter-group">
           <label>To:</label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-field" />
         </div>
         <button className="btn-filter btn-outline" onClick={() => { setStartDate(""); setEndDate(""); }}>
           Clear Dates

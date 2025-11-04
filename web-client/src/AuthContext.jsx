@@ -1,4 +1,4 @@
-// AuthContext.jsx
+// web-client/src/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from './firebase'; 
 import {
@@ -8,8 +8,9 @@ import {
   createUserWithEmailAndPassword,
   setPersistence,
   browserSessionPersistence,
-  // NEW: Import updatePassword function
   updatePassword,
+  // NEW: Import sendEmailVerification
+  sendEmailVerification,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -39,31 +40,37 @@ export function AuthProvider({ children }) {
   // Sign in with Firebase
   async function login(email, password) {
     
-    // Set persistence to SESSION before signing in.
     await setPersistence(auth, browserSessionPersistence);
-
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+
+    // --- NEW VERIFICATION CHECK ---
+    if (!user.emailVerified) {
+      // If the email is not verified, send another verification email (in case they lost the first one)
+      // and block the login.
+      await sendEmailVerification(user);
+      await signOut(auth); // Log them out immediately
+      throw new Error("Please verify your email before logging in. A new verification link has been sent to your inbox.");
+    }
+    // --- END NEW CHECK ---
 
     const userProfile = await fetchUserProfile(user);
 
     if (userProfile) {
-        // Enforce Admin-Only Login (Existing check)
-        if (userProfile.role !== 'admin') {
+        if (userProfile.role !== 'admin' && userProfile.role !== 'manager') { // Allow manager to log in
             await signOut(auth);
-            throw new Error("Access denied. Only Administrator accounts can access the Web Client.");
+            throw new Error("Access denied. Only Administrator or Manager accounts can access the Web Client.");
         }
         
         setCurrentUser(userProfile);
         return userCredential;
     } else {
-        // If Firestore profile is missing (deleted by admin), block login
         await signOut(auth);
         throw new Error("Access denied. Account profile not found or has been disabled.");
     }
   }
 
-  // Admin function to create a new user directly
+  // Admin function to create a new user
   async function signupAdmin(email, password, firstName, lastName, contactNumber, role) {
     // 1. Create the user in Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -77,18 +84,22 @@ export function AuthProvider({ children }) {
       lastName,
       contactNumber, 
       role, 
+      // You can add this field, though Firebase's `user.emailVerified` is the source of truth
+      emailVerified: false 
     });
+    
+    // 3. --- NEW: Send verification email ---
+    await sendEmailVerification(user);
+    // --- END NEW STEP ---
     
     return userCredential;
   }
   
-  // NEW FUNCTION: Change the password for the currently authenticated user
+  // Change the password for the currently authenticated user
   async function changeSelfPassword(newPassword) {
       if (!auth.currentUser) {
           throw new Error("No user is currently logged in.");
       }
-      // Note: If the user hasn't logged in recently, this will fail with a 
-      // 'auth/requires-recent-login' error, which is a standard Firebase security measure.
       await updatePassword(auth.currentUser, newPassword);
   }
 
@@ -98,41 +109,42 @@ export function AuthProvider({ children }) {
     return signOut(auth);
   }
 
-  useEffect(() => {
-    // Set persistence to SESSION immediately on component mount 
-    setPersistence(auth, browserSessionPersistence)
-        .then(() => {
-            // Listen for authentication state changes
-            const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    const userProfile = await fetchUserProfile(user);
-                    
-                    if (userProfile) {
-                        // Enforce Admin-Only Web Session (Existing check)
-                        if (userProfile.role !== 'admin') {
-                            console.warn("Non-admin user attempted to access Web Client. Forcing logout.");
-                            await signOut(auth);
-                            setCurrentUser(null);
-                        } else {
-                            setCurrentUser(userProfile);
-                        }
-                    } else {
-                        console.warn("User profile not found in Firestore. Revoking access.");
-                        await signOut(auth);
-                        setCurrentUser(null);
-                    }
-                } else {
-                    setCurrentUser(null);
-                }
-                setLoading(false);
-            });
-            return unsubscribe;
-        })
-        .catch((error) => {
-            console.error("Error setting Firebase persistence:", error);
-            setLoading(false);
-        });
+  useEffect(() => { 
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // --- NEW: Check verification status on app load ---
+            if (!user.emailVerified) {
+              // If user is saved in session but not verified, log them out.
+              await signOut(auth);
+              setCurrentUser(null);
+              setLoading(false);
+              return;
+            }
+            // --- END NEW CHECK ---
 
+            const userProfile = await fetchUserProfile(user);
+            
+            if (userProfile) {
+                // Allow admin and manager roles
+                if (userProfile.role !== 'admin' && userProfile.role !== 'manager') {
+                    console.warn("Non-admin/manager user attempted to access Web Client. Forcing logout.");
+                    await signOut(auth);
+                    setCurrentUser(null);
+                } else {
+                    setCurrentUser(userProfile);
+                }
+            } else {
+                console.warn("User profile not found in Firestore. Revoking access.");
+                await signOut(auth);
+                setCurrentUser(null);
+            }
+        } else {
+            setCurrentUser(null);
+        }
+        setLoading(false);
+    });
+    
+    return unsubscribe;
   }, []);
 
   const value = {
@@ -140,7 +152,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     signupAdmin, 
-    changeSelfPassword, // EXPOSE THE NEW FUNCTION
+    changeSelfPassword,
   };
 
   return (

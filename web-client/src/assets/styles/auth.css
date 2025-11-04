@@ -7,12 +7,9 @@
   font-family: var(--font-main); 
   padding: 20px;
 }
+
+/* .auth-card gets styles from .card in global.css */
 .auth-card {
-  /* Use the global card style */
-  background-color: var(--c-bg-card);
-  border: 1px solid var(--c-border);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   padding: 40px 35px;
   width: 100%;
   max-width: 420px;
@@ -36,34 +33,12 @@
   height: 44px; /* Standard height */
   background-color: var(--c-bg-body); /* Lighter bg for input */
 }
+
+/* This class is now handled by .btn .btn-primary */
+/* We just add layout styles */
 .auth-button {
-  /* Use global button styles */
-  height: 44px;
-  padding: 0 20px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   width: 100%;
   margin-top: 1rem;
-
-  /* Primary variant */
-  background-color: var(--c-brand);
-  color: white;
-  border: 1px solid var(--c-brand);
-}
-.auth-button:hover:not(:disabled) {
-  background-color: var(--c-brand-dark);
-  border-color: var(--c-brand-dark);
-}
-.auth-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* Specific to CreateUser form */

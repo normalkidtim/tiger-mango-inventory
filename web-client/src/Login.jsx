@@ -1,3 +1,5 @@
+// web-client/src/Login.jsx
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { useAuth } from './AuthContext';
@@ -19,15 +21,23 @@ export default function Login() {
       await login(email, password);
       navigate('/'); 
     } catch (err) {
-      setError('Failed to log in. Please check your email and password.');
+      // --- UPDATED ERROR HANDLING ---
+      // Check for our custom verification error from AuthContext
+      if (err.message.includes("verify your email")) {
+        setError(err.message);
+      } else {
+        // Handle all other errors (wrong password, etc.)
+        setError('Failed to log in. Please check your email and password.');
+      }
       console.error(err);
+      // --- END UPDATED BLOCK ---
     }
     setLoading(false);
   }
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
+      <div className="auth-card card"> 
         <h2 className="auth-title">Tealicieux</h2>
         {error && <div className="error-message">{error}</div>}
         
@@ -55,7 +65,7 @@ export default function Login() {
           <button 
             disabled={loading} 
             type="submit" 
-            className="auth-button"
+            className="btn btn-primary auth-button"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>

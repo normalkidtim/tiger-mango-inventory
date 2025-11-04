@@ -15,8 +15,6 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
 import { FiGrid, FiBox, FiPackage, FiPlus, FiAlertCircle, FiTrash2 } from "react-icons/fi"; 
-// Note: We no longer import inventory.css as its styles are now in global.css
-// or simplified below.
 
 // Helper function to format keys
 const getDisplayName = (key) => key.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -154,7 +152,7 @@ export default function Inventory() {
 
   if (loading) {
       return (
-          <div>
+          <div className="page-container"> {/* ADDED WRAPPER */}
               <div className="page-header"><FiGrid /><h2>Inventory Overview</h2></div>
               <div className="page-header-underline"></div>
               <p className="no-data">Loading inventory data...</p>
@@ -162,10 +160,10 @@ export default function Inventory() {
       );
   }
 
-  const availableCategories = Object.keys(inventoryData).sort((a, b) => a.localeCompare(b));
+  const availableCategories = Object.keys(inventoryData).sort((a, b) => a.localeCompare(b.name));
 
   return (
-    <div>
+    <div className="page-container"> {/* ADDED WRAPPER */}
       <div className="page-header"><FiGrid /><h2>Inventory Overview</h2></div>
       <div className="page-header-underline"></div>
       
@@ -282,7 +280,7 @@ function InventoryCard({ title, items, icon, docId, onUpdate, onDelete, onDelete
 
   return (
     <div className="card">
-      <div className="card-header" style={{ justifyContent: 'space-between', display: 'flex' }}>
+      <div className="card-header" style={{ justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
         <h3>{icon} {title}</h3>
         <button 
           onClick={() => onDelete(docId, title)}
@@ -302,7 +300,7 @@ function InventoryCard({ title, items, icon, docId, onUpdate, onDelete, onDelete
                 <input 
                   type="number" 
                   defaultValue={item.stock}
-                  onBlur={(e) => onUpdate(item.id, e.target.value)}
+                  onBlur={(e) => onUpdate(docId, item.id, e.target.value)} // Corrected: Pass docId
                 />
                 <button 
                   onClick={() => onDeleteItem(docId, item.id, item.name)}

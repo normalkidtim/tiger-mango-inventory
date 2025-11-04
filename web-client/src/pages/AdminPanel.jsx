@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions'; 
 import { db } from '../firebase';
 import { useAuth } from '../AuthContext';
 import { FiUsers, FiEdit, FiSave, FiAlertCircle, FiUser, FiMail, FiPhone, FiTrash2, FiKey } from 'react-icons/fi';
+// Import required styles
 import '../assets/styles/tables.css'; 
 import '../assets/styles/FormManager.css'; 
 import '../assets/styles/admin.css'; 
@@ -13,31 +13,109 @@ import '../assets/styles/admin.css';
 const getDisplayName = (key) => key.charAt(0).toUpperCase() + key.slice(1);
 const ROLES = ['employee', 'manager', 'admin'];
 
-// Initialize Firebase Functions (needed for Admin Password Reset *if* enabled)
-const functions = getFunctions();
-const resetPasswordCallable = httpsCallable(functions, 'adminResetPassword');
+// --- Self-Service Password Component ---
+function SelfPasswordChangeForm({ onChangePassword, onClose }) {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      return setError('Passwords do not match');
+    }
+    if (newPassword.length < 6) {
+      return setError('Password must be at least 6 characters');
+    }
+
+    try {
+      setError('');
+      setSuccess('');
+      setLoading(true);
+      await onChangePassword(newPassword);
+      setSuccess('✅ Your password has been updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(onClose, 2000); // Close after 2s on success
+    } catch (error) {
+      console.error(error);
+      if (error.code === 'auth/requires-recent-login') {
+        setError('❌ This is a sensitive operation. Please log out and log back in to change your password.');
+      } else {
+        setError(`❌ Error: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: '24px' }}>
+      <div className="card-header">
+        <h3><FiKey /> Change Your Password</h3>
+      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="card-body">
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+          
+          <div className="form-row-2-col">
+            <div className="form-group">
+              <label>New Password (min 6 chars)</label>
+              <input
+                type="password"
+                className="input-field"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Confirm New Password</label>
+              <input
+                type="password"
+                className="input-field"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+        </div>
+        <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Updating...' : 'Update Password'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 
-// Component for a single User Card with Edit functionality
-// NOTE: onPasswordChange prop is no longer needed but kept for cleanliness in refactor
+// --- User Card Component ---
 function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChange, onDelete, isEditing }) {
     const isCurrentUser = user.uid === currentUser.uid;
     const { id, email } = user;
     
     const cardClass = `user-card active`; 
 
-    // The handlePasswordUpdate logic and password states are REMOVED entirely.
     const handleCancel = (userId) => {
         onCancelEdit(userId);
     }
 
     return (
-        <div key={id} className={cardClass}>
-            <div className="user-info">
+        <div key={id} className={`card ${cardClass}`}>
+            <div className="card-body user-info">
                 {isEditing ? (
                     <>
                         {/* Editable Profile Details */}
-                        <div className="form-group-item">
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label><FiUser size={14} /> First Name</label>
                             <input
                                 type="text"
@@ -46,7 +124,7 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
                                 onChange={(e) => onChange(id, 'firstName', e.target.value)}
                             />
                         </div>
-                        <div className="form-group-item">
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label><FiUser size={14} /> Last Name</label>
                             <input
                                 type="text"
@@ -55,7 +133,7 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
                                 onChange={(e) => onChange(id, 'lastName', e.target.value)}
                             />
                         </div>
-                        <div className="form-group-item">
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label><FiPhone size={14} /> Contact Number</label>
                             <input
                                 type="text"
@@ -69,7 +147,7 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
                         <p className="user-email"><FiMail size={14} /> {email}</p>
                         
                         {/* Editable Role */}
-                        <div className="form-group-item">
+                        <div className="form-group" style={{ marginBottom: '0' }}>
                             <label>Role</label>
                             <select 
                                 className="input-field"
@@ -83,10 +161,10 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
                                     </option>
                                 ))}
                             </select>
+                            {isCurrentUser && user.role !== 'admin' && (
+                                <small style={{ color: 'var(--c-text-secondary)', marginTop: '5px' }}>You cannot change your own role.</small>
+                            )}
                         </div>
-                        
-                        {/* REMOVED: Change Password Section */}
-                        {/* If you wish to re-add this later when backend is ready, restore the code block here. */}
                     </>
                 ) : (
                     // Read-only display mode
@@ -104,14 +182,14 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
                     <>
                         <button 
                             onClick={() => onSave(user)}
-                            className="btn-add-action btn-save"
+                            className="btn btn-success" 
                             disabled={isCurrentUser && user.role !== 'admin' && user.role !== user.__originalRole}
                         >
                             <FiSave /> Save Profile
                         </button>
                         <button 
                             onClick={() => handleCancel(user.id)}
-                            className="btn-add-action btn-cancel"
+                            className="btn btn-secondary"
                         >
                             Cancel
                         </button>
@@ -120,13 +198,13 @@ function UserCard({ user, currentUser, onSave, onStartEdit, onCancelEdit, onChan
                     <div className="read-only-actions">
                         <button 
                             onClick={() => onStartEdit(user)}
-                            className="btn-action-half btn-edit"
+                            className="btn btn-secondary"
                         >
                             <FiEdit /> Edit
                         </button>
                         <button 
                             onClick={() => onDelete(user)}
-                            className="btn-action-half btn-delete"
+                            className="btn btn-danger"
                             disabled={isCurrentUser}
                         >
                             <FiTrash2 /> Delete
@@ -150,7 +228,7 @@ export default function AdminPanel() {
     const { currentUser, changeSelfPassword } = useAuth(); 
     const isAdmin = currentUser?.role === 'admin';
 
-    // 1. Fetch data (Omitted for brevity)
+    // 1. Fetch data
     useEffect(() => {
         if (!isAdmin) return;
 
@@ -176,16 +254,15 @@ export default function AdminPanel() {
         return () => unsub();
     }, [isAdmin]);
     
-    // 2. Handlers for Edit Mode and State Management (Omitted for brevity)
+    // 2. Handlers for Edit Mode and State Management
     const handleStartEdit = (user) => {
-        setUsersDraft(user);
+        setUsersDraft(user); 
         setEditingId(user.id);
         setSaveStatus('');
     };
     
     const handleCancelEdit = (userId) => {
-        const originalUser = users.find(u => u.id === userId);
-        setUsersDraft(originalUser); 
+        setUsersDraft({}); 
         setEditingId(null);
     };
     
@@ -196,7 +273,7 @@ export default function AdminPanel() {
         }));
     };
 
-    // 3. Core Save Profile Function (Omitted for brevity)
+    // 3. Core Save Profile Function
     const handleSaveUser = async (draftUser) => {
         if (!draftUser.firstName || !draftUser.lastName || !draftUser.role) {
             setSaveStatus('❌ First name, last name, and role are required.');
@@ -204,9 +281,12 @@ export default function AdminPanel() {
             return;
         }
         
-        if (draftUser.uid === currentUser.uid && draftUser.role !== 'admin') {
+        const originalUser = users.find(u => u.id === draftUser.id);
+        
+        if (draftUser.uid === currentUser.uid && draftUser.role !== 'admin' && originalUser.role === 'admin') {
             setSaveStatus('❌ You cannot downgrade your own administrative rights.');
             setEditingId(null);
+            setUsersDraft({}); 
             setTimeout(() => setSaveStatus(''), 5000);
             return;
         }
@@ -219,10 +299,11 @@ export default function AdminPanel() {
         };
 
         try {
-            setEditingId(null);
+            setEditingId(null); 
             await updateDoc(doc(db, 'users', draftUser.id), changes);
 
             setSaveStatus(`✅ Profile for ${draftUser.email} updated successfully.`);
+            setUsersDraft({}); 
         } catch (error) {
             console.error("Error updating user:", error);
             setSaveStatus(`❌ Failed to update profile for ${draftUser.email}: ${error.message}`);
@@ -231,10 +312,7 @@ export default function AdminPanel() {
         }
     };
     
-    // 4. Admin Change Password function is REMOVED/NO-OP
-    // The callable function logic is no longer needed here.
-
-    // 5. Delete Function (Omitted for brevity)
+    // 4. Delete Function
     const handleDeleteUser = async (user) => {
         if (user.uid === currentUser.uid) {
             setSaveStatus('❌ You cannot delete your own account.');
@@ -242,7 +320,7 @@ export default function AdminPanel() {
             return;
         }
 
-        if (!window.confirm(`WARNING: Are you absolutely sure you want to delete the profile and access for ${user.email}? \n\nNote: The login account in Firebase Auth MUST be manually deleted later by an administrator to fully block login.`)) {
+        if (!window.confirm(`WARNING: Are you absolutely sure you want to delete the user profile for ${user.email}? \n\nThis will immediately block them from using the mobile and web apps. This action cannot be undone.`)) {
             return;
         }
 
@@ -259,9 +337,8 @@ export default function AdminPanel() {
 
 
     if (!isAdmin) {
-        // ... (Access Denied Block)
         return (
-            <div className="page-content-wrapper">
+            <div className="admin-panel-page page-container"> {/* UPDATED WRAPPER */}
                 <div className="page-header"><FiUsers /><h2>Admin Panel - User Management</h2></div>
                 <div className="page-header-underline"></div>
                 <div className="error-message" style={{ marginTop: '30px', textAlign: 'center' }}>
@@ -273,9 +350,8 @@ export default function AdminPanel() {
     }
 
     if (loading) {
-        // ... (Loading Block)
         return (
-        <div>
+        <div className="admin-panel-page page-container"> {/* UPDATED WRAPPER */}
             <div className="page-header"><FiUsers /><h2>Admin Panel - User Accounts</h2></div>
             <div className="page-header-underline"></div>
             <p className="no-data">Loading user accounts...</p>
@@ -284,26 +360,26 @@ export default function AdminPanel() {
     }
 
     return (
-        <div className="admin-panel-page">
+        <div className="admin-panel-page page-container"> {/* UPDATED WRAPPER */}
         <div className="page-header"><FiUsers /><h2>Admin Panel - User Accounts ({users.length})</h2></div>
         <div className="page-header-underline"></div>
         
         {saveStatus && (
-            <div className={saveStatus.startsWith('❌') ? 'error-message' : 'success-message'} style={{ padding: '10px', marginBottom: '25px' }}>
+            <div className={saveStatus.startsWith('❌') ? 'error-message' : 'success-message'}>
                 {saveStatus}
             </div>
         )}
         
-        {/* Button to show the self-service password change form */}
-        <button 
-            onClick={() => setShowSelfPassword(true)}
-            className="btn-add-action btn-add-secondary"
-            style={{ marginBottom: '20px', maxWidth: '250px' }}
-        >
-            <FiKey /> Change My Password
-        </button>
+        {!showSelfPassword && (
+          <button 
+              onClick={() => setShowSelfPassword(true)}
+              className="btn btn-secondary" 
+              style={{ marginBottom: '20px', maxWidth: '250px' }}
+          >
+              <FiKey /> Change My Password
+          </button>
+        )}
         
-        {/* Self-Service Password Change Form */}
         {showSelfPassword && (
             <SelfPasswordChangeForm
                 onChangePassword={changeSelfPassword}
@@ -316,7 +392,7 @@ export default function AdminPanel() {
         <div className="admin-section">
             <div className="user-grid">
             {users.length === 0 ? (
-                <p className="no-data-admin">No user accounts found.</p>
+                <div className="card"><p className="no-data">No user accounts found.</p></div>
             ) : (
                 users.map(user => {
                     const userToRender = editingId === user.id ? usersDraft : user;
@@ -331,7 +407,6 @@ export default function AdminPanel() {
                             onCancelEdit={handleCancelEdit}
                             onChange={handleUserChange}
                             onDelete={handleDeleteUser}
-                            // onPasswordChange prop REMOVED
                         />
                     );
                 })

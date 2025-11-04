@@ -31,7 +31,7 @@ export default function StockLogs() {
   }, [logs, searchTerm]);
 
   return (
-    <div>
+    <div className="page-container"> {/* ADDED WRAPPER */}
       <div className="page-header">
         <FiFileText />
         <h2>Stock Update Logs</h2>
@@ -50,6 +50,7 @@ export default function StockLogs() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: '100%', flex: 1, outline: 'none' }}
+            className="input-field" /* ADDED CLASS */
           />
         </div>
       </div>

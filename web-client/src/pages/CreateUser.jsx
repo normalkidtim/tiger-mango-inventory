@@ -12,13 +12,13 @@ export default function CreateUser() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [contactNumber, setContactNumber] = useState(''); // NEW: Contact Number field
+  const [contactNumber, setContactNumber] = useState('');
   const [requestedRole, setRequestedRole] = useState('employee');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
 
-  const { currentUser, signupAdmin } = useAuth(); // Assuming a new signupAdmin function is added
+  const { currentUser, signupAdmin } = useAuth();
   const isAdminCreating = currentUser?.role === 'admin';
 
   async function handleSubmit(e) {
@@ -33,7 +33,6 @@ export default function CreateUser() {
     }
     
     if (!isAdminCreating) {
-        // This should not happen if accessed through the sidebar, but kept for safety.
         return setError('Access denied. Only Administrators can create new accounts.');
     }
 
@@ -42,10 +41,10 @@ export default function CreateUser() {
       setSuccess('');
       setLoading(true);
 
-      // We'll call a new function to handle admin-side user creation
       await signupAdmin(email, password, firstName, lastName, contactNumber, requestedRole);
 
-      setSuccess(`✅ ${getDisplayName(requestedRole)} account created successfully for ${email}!`);
+      // --- UPDATED SUCCESS MESSAGE ---
+      setSuccess(`✅ Account created for ${email}. A verification email has been sent to them. They must verify their email before they can log in.`);
       
       // Clear form
       setEmail('');
@@ -54,7 +53,7 @@ export default function CreateUser() {
       setFirstName('');
       setLastName('');
       setContactNumber('');
-      setRequestedRole('employee'); // Reset to default role
+      setRequestedRole('employee'); 
       
     } catch (error) {
       console.error('User creation error:', error);
@@ -64,13 +63,12 @@ export default function CreateUser() {
     setLoading(false);
   }
   
-  // Helper to capitalize role display
   const getDisplayName = (key) => key.charAt(0).toUpperCase() + key.slice(1);
 
 
   if (!isAdminCreating) {
       return (
-          <div className="page-content-wrapper">
+          <div className="admin-creation-page page-container"> 
               <div className="page-header"><FiUserPlus /><h2>Create New User</h2></div>
               <div className="page-header-underline"></div>
               <div className="error-message" style={{ marginTop: '30px', textAlign: 'center' }}>
@@ -83,20 +81,19 @@ export default function CreateUser() {
 
 
   return (
-    <div className="admin-creation-page">
+    <div className="admin-creation-page page-container"> 
         <div className="page-header"><FiUserPlus /><h2>Create New User Account</h2></div>
         <div className="page-header-underline"></div>
 
-        <div className="auth-container" style={{ display: 'block', height: 'auto', padding: '0', backgroundColor: 'transparent' }}>
-            <div className="auth-card" style={{ width: '100%', maxWidth: '600px', margin: 'auto', padding: '20px' }}>
+        <div className="auth-container" style={{ display: 'block', minHeight: 'auto', padding: '0', backgroundColor: 'transparent' }}>
+            <div className="auth-card card" style={{ width: '100%', maxWidth: '600px', margin: '0', padding: '24px', textAlign: 'left' }}> 
                 
                 {error && <div className="error-message">{error}</div>}
                 {success && <div className="success-message">{success}</div>}
                 
                 <form onSubmit={handleSubmit} className="auth-form">
-                    {/* First Name / Last Name Row */}
                     <div className="form-row-2-col"> 
-                        <div className="form-group half">
+                        <div className="form-group">
                             <label>First Name *</label>
                             <input
                                 type="text"
@@ -107,7 +104,7 @@ export default function CreateUser() {
                             />
                         </div>
                         
-                        <div className="form-group half">
+                        <div className="form-group">
                             <label>Last Name *</label>
                             <input
                                 type="text"
@@ -126,7 +123,7 @@ export default function CreateUser() {
                             value={contactNumber}
                             onChange={(e) => setContactNumber(e.target.value)}
                             className="input-field"
-                            placeholder='Optional'
+                            placeholder='Optional (e.g., 0917xxxxxxx)'
                         />
                     </div>
 
@@ -154,9 +151,8 @@ export default function CreateUser() {
                         </select>
                     </div>
                     
-                    {/* Password / Confirm Password Row */}
                     <div className="form-row-2-col"> 
-                        <div className="form-group half">
+                        <div className="form-group">
                             <label>Password * (min 6 chars)</label>
                             <input
                                 type="password"
@@ -168,7 +164,7 @@ export default function CreateUser() {
                             />
                         </div>
                         
-                        <div className="form-group half">
+                        <div className="form-group">
                             <label>Confirm Password *</label>
                             <input
                                 type="password"
@@ -183,9 +179,9 @@ export default function CreateUser() {
                     <button 
                         disabled={loading} 
                         type="submit" 
-                        className="auth-button"
+                        className="btn btn-primary auth-button"
                     >
-                        {loading ? 'Creating Account...' : 'Create User'}
+                        {loading ? 'Creating Account...' : 'Create User & Send Verification'}
                     </button>
                 </form>
             </div>

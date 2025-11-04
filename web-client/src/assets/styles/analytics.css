@@ -1,17 +1,23 @@
 /* web-client/src/assets/styles/analytics.css */
 
-/* All .stat-card, .chart-card, .ranking-card are now global .card
-  We just style the *content* inside them
-*/
+/* All cards use the global .card style */
 
 /* --- Stats Grid --- */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 20px;
     margin-bottom: 24px;
 }
-/* We apply .card to the StatCard, this just styles the icon */
+
+.stat-card {
+    /* This gets .card styles globally */
+    /* We just style the content *inside* it */
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
 .stat-icon {
     color: white;
     padding: 12px;
@@ -47,11 +53,10 @@
     gap: 20px;
     margin-bottom: 24px;
 }
-.chart-card-header {
-  font-size: 1.15rem;
-  color: var(--c-text-primary);
-  font-weight: 600;
-  margin: 0;
+
+/* .chart-card uses global .card */
+.chart-card .card-body {
+    padding: 20px;
 }
 
 /* Recharts Tooltip Styling */
@@ -76,22 +81,33 @@
 /* --- Ranking Lists --- */
 .ranking-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 20px;
 }
+
+/* .ranking-card uses global .card */
+.ranking-card .card-body {
+    padding: 24px;
+}
+
 .ranking-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--c-brand);
-    margin: 0; /* h3 has a default margin */
+    margin: 0 0 16px 0;
     font-size: 1.15rem;
     color: var(--c-text-primary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 16px;
+}
+.ranking-header svg {
+    color: var(--c-brand);
 }
 .ranking-list {
     list-style: none;
     padding: 0;
-    margin-top: 16px;
+    margin: 0;
 }
 .ranking-list li {
     display: flex;

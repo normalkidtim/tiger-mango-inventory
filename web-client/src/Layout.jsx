@@ -86,7 +86,12 @@ export default function Layout() {
         {/* Logout Button */}
         <div className="sidebar-bottom">
           {currentUser && <p className="sidebar-user">{currentUser.displayName || currentUser.email}</p>}
-          <button onClick={() => { handleLogout(); handleNavLinkClick(); }} className="logout-btn"><FiLogOut />Logout</button>
+          <button 
+            onClick={() => { handleLogout(); handleNavLinkClick(); }} 
+            className="btn btn-secondary logout-btn" /* UPDATED CLASS */
+          >
+            <FiLogOut />Logout
+          </button>
         </div>
       </aside>
       

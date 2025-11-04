@@ -1,12 +1,8 @@
-/* This file is now minimal. 
-  The card container is defined by the global .card style.
-  We just style the table *inside* the card.
-*/
+/* web-client/src/assets/styles/tables.css */
 
 .card table { 
   width: 100%; 
   border-collapse: collapse; 
-  /* Remove padding from card-body when holding a table */
 }
 .card.no-padding .card-body {
     padding: 0;
@@ -22,6 +18,7 @@
   font-weight: 600; 
   text-transform: uppercase; 
   letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--c-border); 
 }
 .card td { 
   padding: 16px 24px; 
@@ -47,12 +44,14 @@
 }
 
 /* Make table inputs blend in */
+/* UPDATED: Uses new "inset" input style */
 .card td .input-field {
   width: 90px;
   padding: 8px 10px;
   text-align: center;
   font-weight: 500;
   background-color: var(--c-bg-body);
+  border-color: transparent;
 }
 .card td .input-field:focus {
   background-color: var(--c-bg-card);

@@ -1,8 +1,6 @@
 /* web-client/src/assets/styles/admin.css */
 
-/* .admin-section and .user-card are now global .card
-  We just style the content *inside* them.
-*/
+/* .card styles come from global.css */
 
 /* --- User Grid & Card Layout --- */
 .user-grid {
@@ -10,10 +8,13 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
 }
+
+/* User Info styles inside the card */
 .user-info h4 {
     margin: 0 0 10px 0;
     font-size: 1.2rem;
     color: var(--c-text-primary);
+    word-break: break-word;
 }
 .user-email, .user-role, .user-contact {
     font-size: 0.9rem;
@@ -22,6 +23,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    word-break: break-all;
 }
 .user-role {
     margin-top: 10px;
@@ -40,30 +42,7 @@
     color: var(--c-text-primary); 
 }
 
-/* --- Password Change Section --- */
-.password-change-section {
-    padding: 16px;
-    margin-top: 16px;
-    border: 1px solid var(--c-border);
-    border-radius: 8px;
-    background-color: var(--c-bg-body);
-}
-.password-change-section h4 {
-    font-size: 1rem;
-    color: var(--c-text-primary);
-    margin: 0 0 10px 0;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.password-note {
-    font-size: 0.8rem;
-    color: var(--c-brand-dark);
-    margin-top: 8px;
-    font-weight: 500;
-}
-
-/* Role Badge */
+/* Role Badge (UPDATED to new palette) */
 .role-badge {
     padding: 3px 10px;
     border-radius: 20px;
@@ -72,9 +51,9 @@
     text-transform: uppercase;
     margin-left: 5px;
 }
-.role-badge.admin { background-color: var(--c-brand-light); color: var(--c-brand); }
-.role-badge.manager { background-color: var(--c-gold-light); color: var(--c-gold); }
-.role-badge.employee { background-color: var(--c-blue-light); color: var(--c-blue); }
+.role-badge.admin { background-color: var(--c-danger-light); color: var(--c-danger); } 
+.role-badge.manager { background-color: var(--c-gold-light); color: var(--c-gold); } 
+.role-badge.employee { background-color: var(--c-brand-light); color: var(--c-brand); } 
 
 /* --- Action Buttons --- */
 .user-card-actions {
@@ -85,13 +64,23 @@
     margin-top: 20px;
     border-top: 1px solid var(--c-border);
 }
+
 .read-only-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
-.read-only-actions .btn-action-half {
-    flex: 1;
+
+/* Specific button for success (save) */
+.btn-success {
+  background-color: var(--c-green);
+  color: white;
+  border: none;
 }
+.btn-success:hover:not(:disabled) {
+  background-color: #047857; /* Darker green */
+}
+
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 768px) {
@@ -100,6 +89,6 @@
         gap: 15px;
     }
     .read-only-actions {
-        flex-direction: column;
+        grid-template-columns: 1fr; /* Stack buttons on mobile */
     }
 }

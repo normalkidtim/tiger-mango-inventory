@@ -3,27 +3,34 @@
   This is the main design system file.
 --- */
 
-/* 1. COLOR PALETTE */
+/* 1. COLOR PALETTE (NEW "TEALICIEUX" LIGHT THEME) */
 :root {
-  /* Brand Colors */
-  --c-brand: #E53935; /* Tealicieux Red */
-  --c-brand-light: #FFEBEE; /* Light Red BG */
-  --c-brand-dark: #C62828;
+  /* Brand Colors (From Image) */
+  --c-brand: #3A6A70; /* Dark Teal */
+  --c-brand-light: rgba(58, 106, 112, 0.1); /* Light Teal BG */
+  --c-brand-dark: #2F565B;
+  --c-brand-gradient: linear-gradient(to right, #3A6A70 0%, #4B8890 100%);
   
-  /* Neutral Colors */
+  /* Neutral Colors (Light Mode) */
   --c-bg-body: #F9FAFB;    /* Page Background (Very Light Gray) */
   --c-bg-card: #FFFFFF;    /* Card Background (White) */
   --c-border: #E5E7EB;    /* Main Border Color */
-  --c-text-primary: #1F2937;  /* Dark Text */
-  --c-text-secondary: #6B7280; /* Gray Text */
+  --c-text-primary: #363636;  /* Dark Gray Text (From Image) */
+  --c-text-secondary: #6B7280; /* Lighter Gray Text */
   --c-text-placeholder: #9CA3AF;
 
   /* Utility Colors */
-  --c-green: #059669;      /* Success */
-  --c-green-light: #E6F8F3;
-  --c-blue: #2563EB;       /* Info / Edit */
-  --c-blue-light: #E9F0FE;
-  --c-gold: #D97706;       /* Accent / Warning */
+  --c-danger: #F43F5E;       /* Vibrant Pink/Red */
+  --c-danger-light: #FFF1F2;
+  --c-danger-dark: #E11D48;
+  
+  --c-green: #10B981;       /* Emerald Green (Success) */
+  --c-green-light: #ECFDF5;
+  
+  --c-blue: #3B82F6;       /* Standard Blue (Info) */
+  --c-blue-light: #DBEAFE;
+  
+  --c-gold: #F59E0B;       /* Amber/Gold (Accent) */
   --c-gold-light: #FFFBEB;
 
   /* Fonts */
@@ -50,29 +57,28 @@ body {
   display: flex; 
   align-items: center; 
   gap: 12px; 
-  font-size: 1.75rem; 
+  font-size: 1.85rem; 
   font-weight: 700; 
   margin-bottom: 8px; 
-  color: var(--c-text-primary); /* Changed from red to primary text */
+  color: var(--c-text-primary);
 }
 .page-header svg {
-  color: var(--c-brand); /* Icon remains red */
+  color: var(--c-brand); 
 }
 .page-header-underline { 
   height: 3px; 
   width: 100%; 
-  background: var(--c-brand); 
+  background: var(--c-brand-gradient);
   border-radius: 2px; 
   margin-bottom: 24px; 
 }
 
 /* 4. GLOBAL CARD STYLE */
-/* This is the new base style for all content boxes */
 .card {
   background-color: var(--c-bg-card);
-  border: 1px solid var(--c-border);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  border: none;
+  border-radius: 16px; 
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
   margin-bottom: 24px;
 }
 .card-header {
@@ -92,10 +98,10 @@ body {
 }
 .card-footer {
   padding: 16px 24px;
-  background-color: var(--c-bg-body);
+  background-color: #FDFDFD;
   border-top: 1px solid var(--c-border);
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 .card.no-padding .card-body {
   padding: 0;
@@ -108,12 +114,12 @@ select.input-field {
   padding: 10px 14px;
   font-family: var(--font-main);
   font-size: 1rem;
-  background-color: var(--c-bg-card);
+  background-color: var(--c-bg-body); 
   color: var(--c-text-primary);
-  border: 1px solid var(--c-border);
+  border: 1px solid transparent; 
   border-radius: 8px;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -126,8 +132,12 @@ select.input-field {
   padding-right: 2.5rem;
 }
 .input-field:focus {
-  border-color: var(--c-brand);
+  background-color: var(--c-bg-card);
+  border-color: var(--c-brand); 
   box-shadow: 0 0 0 3px var(--c-brand-light);
+}
+.input-field::placeholder {
+  color: var(--c-text-placeholder);
 }
 
 .form-group {
@@ -135,6 +145,7 @@ select.input-field {
   flex-direction: column;
   gap: 6px;
   margin-bottom: 16px;
+  text-align: left;
 }
 .form-group label {
   font-size: 0.9rem;
@@ -151,11 +162,12 @@ select.input-field {
   border-radius: 8px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-decoration: none;
 }
 .btn:disabled {
   opacity: 0.6;
@@ -164,13 +176,14 @@ select.input-field {
 
 /* Button Variants */
 .btn-primary {
-  background-color: var(--c-brand);
+  background-image: var(--c-brand-gradient);
   color: white;
-  border-color: var(--c-brand);
+  border: none;
+  box-shadow: 0 4px 10px -2px rgba(58, 106, 112, 0.3);
 }
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--c-brand-dark);
-  border-color: var(--c-brand-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px -3px rgba(58, 106, 112, 0.4);
 }
 
 .btn-secondary {
@@ -184,13 +197,14 @@ select.input-field {
 }
 
 .btn-danger {
-  background-color: var(--c-brand-light);
-  color: var(--c-brand-dark);
-  border-color: var(--c-brand-light);
+  background-color: var(--c-danger-light);
+  color: var(--c-danger-dark);
+  border-color: var(--c-danger-light);
 }
 .btn-danger:hover:not(:disabled) {
-  background-color: #FEE2E2;
-  color: #B91C1C;
+  background-color: #FFE4E6;
+  color: #BE123C;
+  border-color: #FFE4E6;
 }
 
 /* Utility Classes */
@@ -210,14 +224,23 @@ select.input-field {
   margin-bottom: 20px;
 }
 .error-message {
-  color: var(--c-brand-dark);
-  background-color: var(--c-brand-light);
-  border: 1px solid var(--c-brand);
+  color: var(--c-danger-dark);
+  background-color: var(--c-danger-light);
+  border: 1px solid var(--c-danger);
 }
 .success-message {
   color: var(--c-green);
   background-color: var(--c-green-light);
   border: 1px solid var(--c-green);
+}
+
+/* --- 6. PAGE CONTENT WRAPPER --- */
+/* This new class constrains the max width of content on large screens */
+.page-container {
+  width: 100%;
+  max-width: 1400px; /* Sets a max width for large laptops/desktops */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* --- Mobile-Specific Styles --- */
