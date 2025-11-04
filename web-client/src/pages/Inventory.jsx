@@ -14,7 +14,17 @@ import {
   query,
 } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
-import { FiGrid, FiBox, FiPackage, FiPlus, FiAlertCircle, FiTrash2 } from "react-icons/fi"; 
+import { 
+  FiGrid, 
+  FiBox, 
+  FiPackage, 
+  FiPlus, 
+  FiAlertCircle, 
+  FiTrash2, 
+  FiEdit, 
+  FiCheck, 
+  FiX 
+} from "react-icons/fi"; 
 
 // Helper function to format keys
 const getDisplayName = (key) => key.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -57,22 +67,22 @@ export default function Inventory() {
   const updateStockInFirebase = async (docId, field, value) => {
     const numericValue = Number(value);
     if (isNaN(numericValue) || numericValue < 0) return;
+
+    const oldStockData = inventoryData[docId] || {};
+    const oldValue = oldStockData[field] ?? 0;
     
+    if (oldValue === numericValue) {
+      return;
+    }
+
     try {
       await updateDoc(doc(db, 'inventory', docId), {
         [field]: numericValue,
       });
       
-      setInventoryData(prev => ({
-        ...prev,
-        [docId]: {
-          ...prev[docId],
-          [field]: numericValue,
-        }
-      }));
-
       await addDoc(collection(db, "stock-logs"), {
         item: `${docId} - ${getDisplayName(field)}`,
+        oldValue: oldValue,
         newValue: numericValue,
         user: currentUser?.email || 'unknown',
         timestamp: serverTimestamp(),
@@ -150,9 +160,10 @@ export default function Inventory() {
     }
   };
 
+
   if (loading) {
       return (
-          <div className="page-container"> {/* ADDED WRAPPER */}
+          <div className="page-container">
               <div className="page-header"><FiGrid /><h2>Inventory Overview</h2></div>
               <div className="page-header-underline"></div>
               <p className="no-data">Loading inventory data...</p>
@@ -160,10 +171,10 @@ export default function Inventory() {
       );
   }
 
-  const availableCategories = Object.keys(inventoryData).sort((a, b) => a.localeCompare(b.name));
+  const availableCategories = Object.keys(inventoryData).sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="page-container"> {/* ADDED WRAPPER */}
+    <div className="page-container">
       <div className="page-header"><FiGrid /><h2>Inventory Overview</h2></div>
       <div className="page-header-underline"></div>
       
@@ -176,7 +187,6 @@ export default function Inventory() {
       {/* --- ADD NEW CATEGORY & ITEM FORMS --- */}
       <div className="form-row-2-col" style={{ marginBottom: '24px' }}>
         
-        {/* Add New Stock Category (Document) */}
         <div className="card">
           <div className="card-header">
             <h3><FiBox /> Add New Stock Category</h3>
@@ -205,7 +215,6 @@ export default function Inventory() {
           </div>
         </div>
 
-        {/* Add New Item Type (Field) */}
         <div className="card">
           <div className="card-header">
             <h3><FiPlus /> Add New Item Type</h3>
@@ -272,44 +281,87 @@ export default function Inventory() {
   );
 }
 
-// Separate component for each inventory card
+// --- UPDATED InventoryCard Component ---
 function InventoryCard({ title, items, icon, docId, onUpdate, onDelete, onDeleteItem }) {
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editValue, setEditValue] = useState(0);
+
   const itemArray = Object.entries(items)
     .map(([key, value]) => ({ id: key, name: getDisplayName(key), stock: value }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const handleStartEdit = (item) => {
+    setEditingItemId(item.id);
+    setEditValue(item.stock);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null);
+    setEditValue(0);
+  };
+
+  const handleSaveEdit = (item) => {
+    if (window.confirm(`Are you sure you want to change ${item.name} from ${item.stock} to ${editValue}?`)) {
+      onUpdate(docId, item.id, editValue);
+    }
+    handleCancelEdit(); 
+  };
+
   return (
-    <div className="card">
+    // UPDATED: Added "no-padding" class to use the global.css rule
+    <div className="card no-padding">
       <div className="card-header" style={{ justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
         <h3>{icon} {title}</h3>
         <button 
           onClick={() => onDelete(docId, title)}
-          className="btn-danger"
+          className="btn btn-danger"
           style={{ height: '36px', padding: '0 10px', fontSize: '0.9rem' }}
           title={`Delete the entire ${title} category`}
         >
           <FiTrash2 size={16} />
         </button>
       </div>
-      <div className="card-body" style={{ padding: '0 24px 24px 24px' }}>
+      
+      {/* UPDATED: Removed the inline style from card-body */}
+      <div className="card-body">
         <div className="inventory-item-list">
           {itemArray.length > 0 ? itemArray.map((item) => (
             <div className="inventory-item" key={item.id}>
               <span className="inventory-item-name">{item.name}</span>
-              <div className="inventory-item-stock">
-                <input 
-                  type="number" 
-                  defaultValue={item.stock}
-                  onBlur={(e) => onUpdate(docId, item.id, e.target.value)} // Corrected: Pass docId
-                />
-                <button 
-                  onClick={() => onDeleteItem(docId, item.id, item.name)}
-                  className="inventory-delete-btn"
-                  title={`Delete ${item.name} item`}
-                >
-                  <FiTrash2 size={16} />
-                </button>
-              </div>
+              
+              {editingItemId === item.id ? (
+                // --- EDIT MODE ---
+                <div className="inventory-item-stock edit-mode">
+                  <input 
+                    type="number" 
+                    value={editValue}
+                    onChange={(e) => setEditValue(Number(e.target.value))}
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(item)}
+                  />
+                  <button onClick={() => handleSaveEdit(item)} className="btn-save-stock" title="Save">
+                    <FiCheck size={18} />
+                  </button>
+                  <button onClick={handleCancelEdit} className="btn-cancel-stock" title="Cancel">
+                    <FiX size={18} />
+                  </button>
+                </div>
+              ) : (
+                // --- READ-ONLY MODE ---
+                <div className="inventory-item-stock read-only">
+                  <span className="inventory-item-value">{item.stock}</span>
+                  <button onClick={() => handleStartEdit(item)} className="btn-edit-stock" title="Edit">
+                    <FiEdit size={16} />
+                  </button>
+                  <button 
+                    onClick={() => onDeleteItem(docId, item.id, item.name)}
+                    className="inventory-delete-btn"
+                    title={`Delete ${item.name} item`}
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
+                </div>
+              )}
             </div>
           )) : <p className="no-items-message">No items. Use the form above to add one.</p>}
         </div>

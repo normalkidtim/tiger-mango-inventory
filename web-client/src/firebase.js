@@ -15,7 +15,17 @@ const firebaseConfig = {
 };
 // 👆 ***** UPDATE THESE VALUES ***** 👆
 
+// --- UPDATED BLOCK ---
+
+// Main app instance for your app
 const app = initializeApp(firebaseConfig);
 
+// NEW: Secondary app instance specifically for admin-only actions
+// We give it a unique name to avoid conflicts.
+const adminApp = initializeApp(firebaseConfig, "adminCreateUserApp");
+
 export const db = getFirestore(app);
-export const auth = getAuth(app); // ✅ Initialize and export auth
+export const auth = getAuth(app); // Main auth for login, logout, state
+export const adminAuth = getAuth(adminApp); // Secondary auth for creating users
+
+// --- END UPDATED BLOCK ---

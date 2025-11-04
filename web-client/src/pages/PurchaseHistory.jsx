@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
-import { FiShoppingCart, FiCalendar, FiCheckCircle, FiXCircle, FiUser } from "react-icons/fi"; 
+import { FiShoppingCart, FiCalendar, FiCheckCircle, FiXCircle, FiUser, FiSearch } from "react-icons/fi"; 
 
 // Helper function to format prices
 const formatPrice = (price) => `₱${(price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -13,6 +13,7 @@ export default function PurchaseHistory() {
   const [endDate, setEndDate] = useState("");
   const [filterStatus, setFilterStatus] = useState('All'); 
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState(""); 
 
   useEffect(() => {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
@@ -23,26 +24,57 @@ export default function PurchaseHistory() {
     return () => unsub();
   }, []);
 
+  // UPDATED: The filter logic now includes categoryName
   const filteredOrders = useMemo(() => {
+    const lowercasedTerm = searchTerm.toLowerCase();
+
     return orders.filter(order => {
+      // 1. Status Filter
       const isStatusMatch = filterStatus === 'All' || order.status === filterStatus;
       if (!isStatusMatch) return false;
 
+      // 2. Date Filter
       const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : null;
       if (!orderDate) return false; 
-
       const start = startDate ? new Date(startDate) : null;
       if (start) start.setHours(0, 0, 0, 0);
-      
       const end = endDate ? new Date(endDate) : null;
       if (end) end.setHours(23, 59, 59, 999);
-
       const isAfterStart = start ? orderDate >= start : true;
       const isBeforeEnd = end ? orderDate <= end : true;
+      if (!(isAfterStart && isBeforeEnd)) return false;
+      
+      // 3. Search Term Filter
+      if (lowercasedTerm === "") {
+        return true; // No search term, so it passes
+      }
+      
+      // Check cashier name
+      const cashierMatch = order.cashier && order.cashier.toLowerCase().includes(lowercasedTerm);
+      
+      // Check item names (flavors)
+      const itemMatch = order.items && order.items.some(item => 
+        item.name && item.name.toLowerCase().includes(lowercasedTerm)
+      );
 
-      return isAfterStart && isBeforeEnd;
+      // --- NEW: Check category name ---
+      const categoryMatch = order.items && order.items.some(item =>
+        item.categoryName && item.categoryName.toLowerCase().includes(lowercasedTerm)
+      );
+      // --- END NEW ---
+
+      // Check add-on names
+      const addonMatch = order.items && order.items.some(item => 
+        item.addons && item.addons.some(addon => {
+          const addonName = addon.name || addon; // Handle old addon strings
+          return addonName && addonName.toLowerCase().includes(lowercasedTerm);
+        })
+      );
+      
+      // UPDATED: Added categoryMatch
+      return cashierMatch || itemMatch || addonMatch || categoryMatch;
     });
-  }, [orders, startDate, endDate, filterStatus]);
+  }, [orders, startDate, endDate, filterStatus, searchTerm]); // <-- No change here, still correct
   
   const FilterButton = ({ status, label }) => (
     <button
@@ -94,10 +126,24 @@ export default function PurchaseHistory() {
                     <div className="item-details-history">
                         <span className="item-category-name">{item.categoryName}</span>
                         <span className="item-name-history">{item.quantity}x {item.name} ({item.size})</span>
+                        
+                        {(item.addons && item.addons.length > 0) && (
+                            <span className="item-addons-history">
+                              +{item.addons.map(a => {
+                                  const addonQty = a.quantity || 1; 
+                                  const addonName = a.name || a;     
+                                  const addonPrice = a.price || 0; 
+                                  const totalAddonPrice = addonPrice * addonQty;
+                                  
+                                  return `${addonQty}x ${addonName} (${formatPrice(totalAddonPrice)})`;
+                                }).join(', ')}
+                            </span>
+                        )}
                     </div>
-                    {(item.addons && item.addons.length > 0) && (
-                        <span className="item-addons-history">+{item.addons.map(a => `${a.quantity}x ${a.name}`).join(', ')}</span>
-                    )}
+                    
+                    <span className="item-price-history">
+                      {formatPrice(item.finalPrice)}
+                    </span>
                 </div>
             ))}
         </div>
@@ -106,9 +152,27 @@ export default function PurchaseHistory() {
   };
 
   return (
-    <div className="page-container"> {/* ADDED WRAPPER */}
+    <div className="page-container">
       <div className="page-header"><FiShoppingCart /><h2>Purchase History</h2></div>
       <div className="page-header-underline"></div>
+
+      {/* --- Search Bar --- */}
+      <div className="card filter-bar">
+        <div className="filter-group" style={{ width: '100%' }}>
+          <FiSearch />
+          <label htmlFor="search-logs" style={{ fontWeight: 600 }}>Search:</label>
+          <input
+            id="search-logs"
+            type="text"
+            // UPDATED: New placeholder
+            placeholder="Search by category, flavor, cashier, or add-on..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: '100%', flex: 1, outline: 'none' }}
+            className="input-field"
+          />
+        </div>
+      </div>
 
       {/* Date Range Filter Bar */}
       <div className="card filter-bar">

@@ -9,16 +9,14 @@
   z-index: 100;
 }
 .sidebar-header { 
-  display: flex; align-items: center; gap: 10px; 
+  display: flex; align-items: center; 
+  /* gap: 10px; <-- REMOVED */
   padding: 10px 15px; margin-bottom: 25px; 
 }
 .desktop-header { display: flex; } 
 
-.sidebar-logo-circle { 
-  width: 24px; height: 24px; 
-  background-color: var(--c-brand); /* Teal logo */
-  border-radius: 50%; 
-}
+/* REMOVED .sidebar-logo-circle rule */
+
 .sidebar-title { 
   font-size: 1.25rem; font-weight: 700; margin: 0; 
   color: var(--c-text-primary);
@@ -46,14 +44,12 @@
   word-break: break-all; text-align: center; font-weight: 500;
 }
 .logout-btn {
-  /* Uses .btn .btn-secondary from global.css */
   width: 100%;
 }
 
 .main-content { 
   margin-left: 240px; 
   padding: 30px; 
-  /* UPDATED: Removed the explicit width calculation */
   box-sizing: border-box; 
   background-color: var(--c-bg-body);
   min-height: 100vh;
@@ -78,7 +74,7 @@
     
     .main-content {
         margin-left: 0; 
-        width: 100%; /* UPDATED: Explicitly set 100% width on mobile */
+        width: 100%;
         padding: 15px; 
         padding-top: 65px; 
     }
@@ -104,7 +100,7 @@
     .mobile-header-title {
         display: flex;
         align-items: center;
-        gap: 10px;
+        /* gap: 10px; <-- REMOVED */
     }
 
     .mobile-overlay {
@@ -129,7 +125,7 @@
     .sidebar-header-title {
         display: flex;
         align-items: center;
-        gap: 10px;
+        /* gap: 10px; <-- REMOVED */
     }
     .sidebar-close-btn {
         background: none;

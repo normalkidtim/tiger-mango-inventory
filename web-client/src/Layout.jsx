@@ -36,7 +36,7 @@ export default function Layout() {
             <FiMenu size={24} />
         </button>
         <div className="mobile-header-title">
-          <div className="sidebar-logo-circle"></div>
+          {/* REMOVED the logo circle div */}
           <h2 className="sidebar-title">Tealicieux</h2>
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function Layout() {
         {/* Header for Mobile (Inside Menu) */}
         <div className="sidebar-mobile-header">
             <div className="sidebar-header-title">
-                <div className="sidebar-logo-circle"></div>
+                {/* REMOVED the logo circle div */}
                 <h2 className="sidebar-title">Tealicieux</h2>
             </div>
             <button className="sidebar-close-btn" onClick={toggleSidebar}>
@@ -60,7 +60,7 @@ export default function Layout() {
 
         {/* Header for Desktop */}
         <div className="sidebar-header desktop-header">
-          <div className="sidebar-logo-circle"></div>
+          {/* REMOVED the logo circle div */}
           <h2 className="sidebar-title">Tealicieux</h2>
         </div>
 
@@ -88,7 +88,7 @@ export default function Layout() {
           {currentUser && <p className="sidebar-user">{currentUser.displayName || currentUser.email}</p>}
           <button 
             onClick={() => { handleLogout(); handleNavLinkClick(); }} 
-            className="btn btn-secondary logout-btn" /* UPDATED CLASS */
+            className="btn btn-secondary logout-btn"
           >
             <FiLogOut />Logout
           </button>

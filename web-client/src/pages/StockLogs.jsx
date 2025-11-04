@@ -2,8 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { FiFileText, FiSearch } from "react-icons/fi";
-// We no longer need to import tables.css, it's global
+import { FiFileText, FiSearch, FiArrowRight } from "react-icons/fi";
 
 export default function StockLogs() {
   const [logs, setLogs] = useState([]);
@@ -31,7 +30,7 @@ export default function StockLogs() {
   }, [logs, searchTerm]);
 
   return (
-    <div className="page-container"> {/* ADDED WRAPPER */}
+    <div className="page-container">
       <div className="page-header">
         <FiFileText />
         <h2>Stock Update Logs</h2>
@@ -50,7 +49,7 @@ export default function StockLogs() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: '100%', flex: 1, outline: 'none' }}
-            className="input-field" /* ADDED CLASS */
+            className="input-field"
           />
         </div>
       </div>
@@ -61,7 +60,7 @@ export default function StockLogs() {
             <thead>
               <tr>
                 <th>Item</th>
-                <th>New Value</th>
+                <th>Change</th>
                 <th>User</th>
                 <th>Timestamp</th>
               </tr>
@@ -73,7 +72,21 @@ export default function StockLogs() {
                 filteredLogs.map((log) => (
                   <tr key={log.id}>
                     <td>{log.item}</td>
-                    <td>{log.newValue}</td>
+                    
+                    {/* UPDATED: Show Old -> New change */}
+                    <td style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}>
+                      {/* Show 'N/A' for old logs that didn't track this */}
+                      <span style={{ color: 'var(--c-text-secondary)', fontSize: '0.9em' }}>
+                        {log.oldValue ?? 'N/A'}
+                      </span>
+                      
+                      <FiArrowRight size={14} color="var(--c-brand)" />
+                      
+                      <span style={{ color: 'var(--c-text-primary)', fontWeight: '600', fontSize: '1.05em' }}>
+                        {log.newValue}
+                      </span>
+                    </td>
+                    
                     <td>{log.user}</td>
                     <td>{log.timestamp?.toDate().toLocaleString('en-US', { timeZone: 'Asia/Manila' })}</td>
                   </tr>
